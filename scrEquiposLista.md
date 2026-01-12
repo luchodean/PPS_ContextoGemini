@@ -1,4 +1,4 @@
-# SCR_EQUIPOS_LISTA.md
+# scrEquiposLista.md
 
 ## 1. Descripción General
 Pantalla principal de navegación ("Browse Screen") para el inventario de equipos. Implementa filtrado avanzado, edición rápida de estados en línea y gestión de ciclo de vida (Alta, Baja, Modificación).
