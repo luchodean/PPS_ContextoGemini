@@ -1,0 +1,110 @@
+# SCR_EQUIPOS_GESTIONAREQUIPO.md
+
+## 1. Descripción General
+Pantalla tipo "Wizard" (Asistente por pasos) para la creación y edición de equipos. Gestiona una transacción compleja que incluye:
+1.  **Datos Maestros:** Cabecera del equipo (`spEquipos`).
+2.  **Datos Técnicos:** Campos dinámicos serializados en JSON (`spCatalogosTiposEquipo`).
+3.  **Adjuntos:** Manejados mediante un Form invisible.
+4.  **Relaciones:** Asignación N:N con Proveedores (`spEquiposProveedores`).
+
+* **Nombre de Pantalla:** `scrEquiposGestionarEquipo`
+* **Fuentes de Datos:**
+    * `spEquipos` (Principal)
+    * `spUbicaciones` (Cascada Sector/Línea)
+    * `spCatalogosTiposEquipo` (Plantillas JSON)
+    * `spEquiposProveedores` (Relación N:N)
+    * `spCatalogosProveedores` (Maestro Proveedores)
+
+---
+
+## 2. Variables de Contexto y Estado
+| Variable | Ámbito | Descripción |
+| :--- | :--- | :--- |
+| `locTabActiva` | Local | Controla la pestaña visible: `"GENERAL"`, `"TECNICA"`, `"PROVEEDORES"`. |
+| `locModoVista` | Navegación | Define el comportamiento: `"Nuevo"` (Crea Borrador) o `"Editar"`. |
+| `locRegistroEditar` | Navegación | Registro activo. En modo Nuevo, comienza `Blank()` y se llena tras el primer Patch. |
+| `colDatosTecnicos` | Colección | Almacena temporalmente los valores técnicos `{ID_Campo, Nombre, Valor, ...}`. |
+| `colProveedoresAsignados` | Colección | Buffer local para la gestión de proveedores antes del guardado final. |
+| `locNumeroGenerado` | Local | Almacena el correlativo calculado (ej: 105). |
+| `locCodigoPreview` | Local | Almacena el código visual completo (ej: "BOM-105"). |
+
+---
+
+## 3. Estructura Visual (Tree View)
+
+* **scrEquiposGestionarEquipo**
+    * `cmpHeader...`, `cmpSidebar...`, `cmpHeaderSeccion...`
+    * **conMain_GestionarEquipos**
+        * **conTabs** (Navegación superior pasos 1, 2, 3)
+        * **conBody_General** (Paso 1)
+            * `ddTipoEquipo` (Dispara carga de plantilla)
+            * `txtCodigoEquipo` (Autogenerado o Manual)
+            * `ddUbicacion_Sector` / `ddUbicacion_Linea` (Cascada)
+            * `ddEstado`
+        * **conBody_Tecnica** (Paso 2)
+            * **galDatosTecnicos** (Inputs dinámicos)
+            * **conAreaAdjuntos** -> `frmAdjuntos` (Formulario oculto para Attachments)
+        * **conBody_Proveedores** (Paso 3)
+            * `cbSeleccion_Proveedor` / `cbSeleccion_Relacion`
+            * `btnAgregarProveedor` (Agrega a colección local)
+            * **galProveedoresAsignados** (Lista visual del buffer)
+        * **conFooter_GestionarEquipo** (Barra de botones inferior)
+
+---
+
+## 4. Lógica Detallada por Pestaña
+
+### 4.1. Inicialización (`OnVisible`)
+* **Modo Nuevo:** Resetea controles y limpia colecciones.
+* **Modo Editar:**
+    * Carga `colProveedoresAsignados` desde `spEquiposProveedores` (aplanando la estructura).
+    * Carga `colDatosTecnicos` fusionando ("Merge") la plantilla original del Tipo de Equipo con el JSON guardado en `locRegistroEditar.DatosTecnicosValores`.
+
+### 4.2. Pestaña 1: General (Autonumeración y Concurrencia)
+Se utiliza una estrategia de **"Creación de Borrador"** al avanzar del paso 1 al 2.
+
+* **Generación de Código (`ddTipoEquipo.OnChange`):**
+    Calcula el siguiente número disponible basándose en el prefijo del tipo de equipo seleccionado (`Sort` + `First` sobre `spEquipos`).
+* **Botón Siguiente (`btnFooter_Siguiente_GENERAL`):**
+    Implementa lógica **Anti-Colisión** usando `IfError`:
+    1.  **Intento A:** Hace `Patch` creando el registro con el número calculado en pantalla.
+    2.  **Si falla (Error de duplicado):**
+        * Recalcula el último número real desde la BD (`Refresh` implícito al filtrar).
+        * Genera un nuevo ID (`_nuevoNumeroRetry`).
+        * Reintenta el `Patch` con el nuevo número.
+        * Notifica al usuario que el código cambió automáticamente.
+    3.  **Resultado:** Guarda el registro creado en `locRegistroEditar` y marca `EsBorrador = true`.
+
+### 4.3. Pestaña 2: Técnica y Adjuntos
+* **Cosecha de Datos:**
+    Al salir de esta pestaña, se ejecuta `ForAll(galDatosTecnicos.AllItems...)` para guardar lo que el usuario escribió en los inputs dentro de `colDatosTecnicos`.
+* **Guardado Intermedio:**
+    Al dar "Siguiente", se actualiza `spEquipos` serializando la colección a JSON:
+    ```powerapps
+    DatosTecnicosValores: JSON(Ungroup(...), JSONFormat.IndentFour)
+    ```
+* **Adjuntos:**
+    Se llama a `SubmitForm(frmAdjuntos)` en este punto para subir los archivos al registro (que ya existe desde el paso 1).
+
+### 4.4. Pestaña 3: Proveedores y Finalización
+* **Gestión Local:** `btnAgregarProveedor` solo agrega a `colProveedoresAsignados`. No impacta BD hasta el final.
+* **Botón Finalizar (`btnFooter_Finalizar_PROVEEDORES`):**
+    1.  **Persistencia Relacional:** Itera la colección y hace `Patch` a `spEquiposProveedores`.
+    2.  **Confirmación de Código (Commit Final):**
+        * Vuelve a verificar si el número de equipo sigue siendo válido (por si otro usuario ocupó el ID mientras editábamos).
+        * Si hay conflicto, aplica la lógica de reintento (Retry Logic) nuevamente.
+        * Cambia el estado `EsBorrador: false`.
+
+---
+
+## 5. Navegación y Rollback
+El sistema maneja la cancelación inteligente para no dejar registros "basura".
+
+* **Botón Cancelar / Atrás:**
+    Si `locModoVista = "Nuevo"` y existe un `locRegistroEditar` (ya se creó el borrador en el paso 1), se ejecuta un **Hard Delete** (`Remove`) para limpiar la base de datos antes de volver.
+
+```powerapps
+If(locModoVista = "Nuevo" && !IsBlank(locRegistroEditar.ID) && locRegistroEditar.EsBorrador,
+    Remove(spEquipos, locRegistroEditar);
+    Notify("Borrador eliminado.", NotificationType.Information)
+);
