@@ -1,0 +1,977 @@
+Screens:
+  scrPlantaVerEstructura:
+    Properties:
+      Fill: =Color.Transparent
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: |-
+        =// 1. Contexto de Navegación
+        Set(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);
+
+        // 2. Inicializar Variables de Estado de la UI
+        UpdateContext({
+            locCargando: true,
+            locItemSeleccionado: Blank(),       // El registro (Sector o Línea) seleccionado
+            locEsHijo: false,                   // True si es Línea, False si es Sector
+            locTabActiva: "PROPIEDADES",        // Pestaña por defecto
+            locModoCreacion: false,             // Controla si estamos en modo "Nuevo"
+            locMostrarConfirmacion: false       // Para overlay de borrado
+        });
+
+        // 3. Refrescar Datos desde SharePoint
+        Refresh(spUbicaciones);
+        Refresh(spEquipos);
+
+        // 4. Cargar datos en Memoria (Optimización "Raw")
+        ClearCollect(colUbicacionesRaw, spUbicaciones);
+
+        // 5. Inicializar Colección de Expandidos
+        ClearCollect(colExpandidos, {ID: 0}); // ID 0 dummy para evitar errores de tabla vacía en filtros
+
+        // 6. Inicializar coleccion de equipos seleccionados
+        Clear(colEquiposSeleccionados);
+
+        // 7. Finalizar carga
+        UpdateContext({ locCargando: false });
+    Children:
+      - cmpHeader_Planta:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Fill: =RGBA(42, 47, 56, 1)
+            Height: =70
+            LongitudHorizontal: =700
+            TriggerReset: =true
+            Width: =Parent.Width
+      - cmpSidebar_Planta:
+          Control: CanvasComponent
+          ComponentName: cmpSidebar
+          Properties:
+            Fill: =Color.Transparent
+            Height: =App.Height - cmpHeader_Planta.Height
+            Navegacion: =
+            Width: =If(varMenuCompacto, 80, 265)
+            Y: =cmpHeader_Planta.Height
+      - cmpHeaderSeccion_Planta:
+          Control: CanvasComponent
+          ComponentName: cmpHeaderSeccion
+          Properties:
+            Fill: =Color.Transparent
+            Height: =80
+            Subtitle: =LookUp(colNav, Id = varActiveId).Breadcrumb
+            Title: =LookUp(colNav, Id = varActiveId).PageTitle
+            Width: =App.Width - cmpSidebar_Planta.Width
+            X: =cmpSidebar_Planta.Width
+            Y: =cmpHeader_Planta.Height
+      - conMain_Planta:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            Height: =App.Height - Self.Y
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Width: =cmpHeaderSeccion_Planta.Width
+            X: =cmpSidebar_Planta.Width
+            Y: =cmpHeaderSeccion_Planta.Y + cmpHeaderSeccion_Planta. Height
+          Children:
+            - conCuerpo_Planta:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =20
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                Children:
+                  - conPanelIzquierdo_Arbol:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Regular
+                        Fill: =locTema_FondoPanel
+                        FillPortions: =0
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =10
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =350
+                      Children:
+                        - conHeader_Arbol:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =0
+                              Height: =50
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =10
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                            Children:
+                              - txtBuscador_Arbol:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BorderColor: =locTema_BordeInput
+                                    BorderThickness: =1
+                                    FillPortions: =1
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Placeholder: ="Buscar sector..."
+                                    TriggerOutput: ="Keypress"
+                              - icnAgregar_Raiz:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    Color: =Color.DimGray
+                                    DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                    DisabledColor: =RGBA(225, 223, 221, 1)
+                                    DisabledFill: =RGBA(0, 0, 0, 0)
+                                    FocusedBorderThickness: =4
+                                    Height: =Parent.Height/2
+                                    HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                    HoverColor: =RGBA(16, 110, 190, 1)
+                                    HoverFill: =RGBA(0, 0, 0, 0)
+                                    Icon: =Icon.Add
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =UpdateContext({
+                                          locItemSeleccionado: Blank(),    // Limpiamos selección
+                                          locModoCreacion: true,           // Activamos modo creación
+                                          locTabActiva: "PROPIEDADES",     // Forzamos vista propiedades
+                                          locEsHijo: false                 // Es un Padre (Sector)
+                                      });
+                                      Reset(txtNombre_Propiedades)
+                                    PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                    PressedColor: =RGBA(16, 110, 190, 1)
+                                    PressedFill: =RGBA(0, 0, 0, 0)
+                                    Tooltip: ="Crear nuevo Sector"
+                                    Width: =Self.Height
+                        - galArbolUbicaciones:
+                            Control: Gallery@2.15.0
+                            Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                            Properties:
+                              BorderColor: =RGBA(245, 245, 245, 1)
+                              FillPortions: =0
+                              Height: =Parent.Height - Self.Y
+                              Items: "=Ungroup(\r\n    ForAll(\r\n        // 1. FILTRO MAESTRO: Solo decide qué SECTORES (Padres) se muestran.\r\n        Sort(\r\n            Filter(colUbicacionesRaw, \r\n                PadreID = 0, \r\n                Activo = true,\r\n                // Si el buscador está vacío trae todo. Si escribes, filtra por coincidencia.\r\n                IsBlank(txtBuscador_Arbol.Value) || StartsWith(Title, txtBuscador_Arbol.Value)\r\n            ),\r\n            Title, SortOrder.Ascending\r\n        ) As _sector,\r\n\r\n        // 2. CONSTRUCCIÓN DE LA RAMA\r\n        Table(\r\n            // A. Fila del Padre (Siempre se muestra si pasó el filtro de arriba)\r\n            {\r\n                _registro: _sector,\r\n                _esPadre: true,\r\n                _nivel: 1\r\n            },\r\n            \r\n            // B. Filas de los Hijos\r\n            // CORRECCIÓN CLAVE: Aquí SOLO miramos si está en 'colExpandidos'.\r\n            // El buscador NO afecta esto. Si estaba cerrado, se queda cerrado.\r\n            If(_sector.ID in colExpandidos.ID,\r\n                ForAll(\r\n                    Sort(\r\n                        Filter(colUbicacionesRaw, \r\n                            PadreID = _sector.ID, \r\n                            Activo = true\r\n                        ),\r\n                        Title, SortOrder.Ascending\r\n                    ) As _linea,\r\n                    {\r\n                        _registro: _linea,\r\n                        _esPadre: false, // Es Hijo\r\n                        _nivel: 2\r\n                    }\r\n                )\r\n            )\r\n        )\r\n    ),\r\n    Value\r\n)"
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: =Clear(colEquiposSeleccionados)
+                              ShowScrollbar: =false
+                              TemplateSize: =45
+                              Transition: =Transition.Pop
+                            Children:
+                              - shpIndicador_Arbol:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    DisabledFill: =RGBA(161, 159, 157, 1)
+                                    Fill: =locTema_AccionPrimaria
+                                    FocusedBorderThickness: =4
+                                    Height: =Parent.TemplateHeight
+                                    HoverFill: =RGBA(0, 120, 212, 1)
+                                    OnSelect: =Select(Parent)
+                                    PressedFill: =RGBA(0, 120, 212, 1)
+                                    Visible: =locItemSeleccionado.ID = ThisItem._registro.ID
+                                    Width: =4
+                              - icnExpandir_Arbol:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    Color: "=If(\r\n    // CASO 1: Estoy parado exactamente en este sector\r\n    ThisItem._registro.ID = locItemSeleccionado.ID || \r\n    \r\n    // CASO 2: Estoy parado en un hijo, y este es su padre (Rama Activa)\r\n    ThisItem._registro.ID = locItemSeleccionado.PadreID,\r\n\r\n    locTema_AccionPrimaria, // Naranja (Activo)\r\n    locTema_TextoSecundario   // Gris suave (Inactivo)\r\n)"
+                                    DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                    DisabledColor: =RGBA(225, 223, 221, 1)
+                                    DisabledFill: =RGBA(0, 0, 0, 0)
+                                    FocusedBorderThickness: =4
+                                    Height: =20
+                                    HoverBorderColor: =ColorFade(Self.Color, -20%)
+                                    HoverColor: =ColorFade(Self.Color, -20%)
+                                    HoverFill: =RGBA(0, 0, 0, 0)
+                                    Icon: |-
+                                      =If(
+                                              ThisItem._registro.ID in colExpandidos.ID, 
+                                              Icon.ChevronDown, 
+                                              Icon.ChevronRight
+                                          )
+                                    OnSelect: |-
+                                      =If(
+                                              ThisItem._registro.ID in colExpandidos.ID,
+                                              Remove(colExpandidos, LookUp(colExpandidos, ID = ThisItem._registro.ID)), // Si estaba abierto -> Cerrar
+                                              Collect(colExpandidos, {ID: ThisItem._registro.ID})                       // Si estaba cerrado -> Abrir
+                                          )
+                                    PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                    PressedFill: =RGBA(0, 0, 0, 0)
+                                    Visible: =ThisItem._esPadre
+                                    Width: =20
+                                    X: =5
+                                    Y: =(Parent.TemplateHeight - Self.Height) / 2
+                              - lblNombre_Arbol:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(locItemSeleccionado.ID = ThisItem._registro.ID, locTema_AccionPrimaria, locTema_TextoPrincipal)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =If(ThisItem._esPadre, FontWeight.Bold, FontWeight.Normal)
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: |-
+                                      =UpdateContext({
+                                          locItemSeleccionado: ThisItem._registro,
+                                          locEsHijo: !ThisItem._esPadre,
+                                          locModoCreacion: false,
+                                          locTabActiva: "PROPIEDADES"
+                                      });
+                                      Clear(colEquiposSeleccionados);
+                                      Reset(chkSeleccionarTodo);      
+                                      Reset(txtNombre_Propiedades)
+                                    Size: =If(ThisItem._esPadre, 14, 13)
+                                    Text: =ThisItem._registro.Title
+                                    Width: =Parent.TemplateWidth - Self.X - 10
+                                    X: =If(ThisItem._esPadre, 40, 70)
+                              - btnOverlay_Arbol:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    Color: =RGBA(255, 255, 255, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    DisabledFill: =RGBA(242, 242, 241, 0)
+                                    Fill: =Color.Transparent
+                                    Font: =Font.'Segoe UI'
+                                    Height: =lblNombre_Arbol.Height
+                                    HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                    HoverColor: =RGBA(255, 255, 255, 1)
+                                    HoverFill: =RGBA(0,0,0,0.05)
+                                    OnSelect: =Select(lblNombre_Arbol)
+                                    PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                    PressedColor: =RGBA(255, 255, 255, 1)
+                                    PressedFill: =RGBA(0,0,0,0.05)
+                                    RadiusBottomLeft: =0
+                                    RadiusBottomRight: =0
+                                    RadiusTopLeft: =0
+                                    RadiusTopRight: =0
+                                    Text: =
+                                    Width: =lblNombre_Arbol.Width
+                                    X: =lblNombre_Arbol.X
+                                    Y: =lblNombre_Arbol.Y
+                        - BarcodeReader2:
+                            Control: BarcodeReader@1.0.25
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                  - conPaneDerecho_Detalle:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Regular
+                        Fill: =locTema_FondoPanel
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =10
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =20
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        PaddingTop: =15
+                      Children:
+                        - conTabs_Capsula_Planta:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Start
+                              Fill: =locTema_TablaFondoHeader
+                              FillPortions: =0
+                              Height: =40
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =0
+                              PaddingBottom: =4
+                              PaddingLeft: =4
+                              PaddingRight: =4
+                              PaddingTop: =4
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              Width: =350
+                            Children:
+                              - btnTab_Propiedades_Capsula:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    Color: =If(locTabActiva = "PROPIEDADES", locTema_TextoInvertido, locTema_TextoPrincipal)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    DisabledFill: =RGBA(242, 242, 241, 0)
+                                    Fill: =If(locTabActiva = "PROPIEDADES", locTema_AccionPrimaria, Color.Transparent)
+                                    FillPortions: =1
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =If(locTabActiva = "PROPIEDADES", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =32
+                                    HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                    HoverColor: =RGBA(255, 255, 255, 1)
+                                    HoverFill: =If(locTabActiva = "PROPIEDADES", locTema_AccionPrimaria, ColorFade(locTema_AccionPrimaria, 90%))
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =UpdateContext({ locTabActiva: "PROPIEDADES" })
+                                    PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                    PressedColor: =RGBA(255, 255, 255, 1)
+                                    PressedFill: |-
+                                      =If(
+                                          locTabActiva = "PROPIEDADES",
+                                          ColorFade(locTema_AccionPrimaria, -20%),  // Naranja más oscuro (Tu código)
+                                          RGBA(0, 0, 0, 0.1)                        // Gris suave
+                                      )
+                                    RadiusBottomLeft: =16
+                                    RadiusBottomRight: =16
+                                    RadiusTopLeft: =16
+                                    RadiusTopRight: =16
+                                    Text: ="Propiedades"
+                              - btnTab_Equipos_Capsula:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    Color: =If(locTabActiva = "EQUIPOS", locTema_TextoInvertido, locTema_TextoPrincipal)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    DisabledFill: =RGBA(242, 242, 241, 0)
+                                    DisplayMode: =If(locModoCreacion, DisplayMode.Disabled, DisplayMode.Edit)
+                                    Fill: =If(locTabActiva = "EQUIPOS", locTema_AccionPrimaria, Color.Transparent)
+                                    FillPortions: =1
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =If(locTabActiva = "EQUIPOS", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =32
+                                    HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                    HoverColor: =RGBA(255, 255, 255, 1)
+                                    HoverFill: =If(locTabActiva = "EQUIPOS", locTema_AccionPrimaria, ColorFade(locTema_AccionPrimaria, 90%))
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =UpdateContext({ locTabActiva: "EQUIPOS" })
+                                    PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                    PressedColor: =RGBA(255, 255, 255, 1)
+                                    PressedFill: |-
+                                      =If(
+                                          locTabActiva = "EQUIPOS",
+                                          ColorFade(locTema_AccionPrimaria, -20%),  // Naranja más oscuro
+                                          RGBA(0, 0, 0, 0.1)                        // Gris suave
+                                      )
+                                    RadiusBottomLeft: =16
+                                    RadiusBottomRight: =16
+                                    RadiusTopLeft: =16
+                                    RadiusTopRight: =16
+                                    Text: ="Equipos"
+                        - conVista_Propiedades:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =10
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =20
+                              Visible: =locTabActiva = "PROPIEDADES"
+                            Children:
+                              - lblTitulo_Propiedades:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =locTema_TextoPrincipal
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Bold
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Size: =18
+                                    Text: |-
+                                      =If(locModoCreacion,
+                                          "Nuevo Sector",
+                                          "Editar " & If(locEsHijo, "Línea", "Sector")
+                                      )
+                                    Width: =Parent.Width
+                              - lblNombre_Propiedades:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Semibold
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: ="Nombre"
+                                    Width: =Parent.Width - 40
+                              - txtNombre_Propiedades:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BorderColor: =locTema_BordeInput
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Placeholder: ="Ingrese el nombre..."
+                                    Value: =If(locModoCreacion, "", locItemSeleccionado.Title)
+                                    Width: =Parent.Width - 40
+                              - conBotones_Propiedades:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =50
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =15
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                  Children:
+                                    - btnGuardar_Propiedades:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          Fill: =locTema_AccionPrimaria
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =RGBA(16, 110, 190, 1)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =If(IsBlank(txtNombre_Propiedades.Value),
+                                                Notify("El nombre es obligatorio.", NotificationType.Error),
+
+                                                Patch(spUbicaciones,
+                                                    If(locModoCreacion, Defaults(spUbicaciones), locItemSeleccionado),
+                                                    {
+                                                        Title: txtNombre_Propiedades.Value,
+                                                        PadreID: If(locModoCreacion, 0, locItemSeleccionado.PadreID),
+                                                        Activo: true
+                                                    }
+                                                );
+                                                Notify("Guardado correctamente.", NotificationType.Success);
+                                                Refresh(spUbicaciones);
+                                                ClearCollect(colUbicacionesRaw, spUbicaciones);
+                                                UpdateContext({ locModoCreacion: false, locItemSeleccionado: Blank() })
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =RGBA(16, 110, 190, 1)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =13
+                                          Text: =If(locModoCreacion, "Crear", "Guardar Cambios")
+                                    - btnEliminar_Propiedades:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =locColorPeligro
+                                          BorderThickness: =1
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =locColorGris300
+                                          DisplayMode: |-
+                                            =If(!locModoCreacion && !IsBlank(locItemSeleccionado), 
+                                                DisplayMode.Edit, 
+                                                DisplayMode.Disabled
+                                            )
+                                          Fill: =locColorPeligro
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =ColorFade(locColorPeligro, -20%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =UpdateContext({ locMostrarConfirmacion: true })
+                                          PaddingBottom: =3
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =RGBA(16, 110, 190, 1)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =13
+                                          Text: ="Eliminar"
+                        - conVista_Equipos:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =10
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =20
+                              Visible: =locTabActiva = "EQUIPOS"
+                            Children:
+                              - conBarra_Equipos:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =40
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                  Children:
+                                    - txtBuscador_EquiposLocal:
+                                        Control: TextInput@0.0.54
+                                        Properties:
+                                          Appearance: ='TextInputCanvas.Appearance'.Outline
+                                          BorderColor: =locTema_BordeInput
+                                          BorderThickness: =1
+                                          FillPortions: =1
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          Placeholder: ="Buscar en esta ubicación..."
+                                          TriggerOutput: ="Keypress"
+                                          Width: =Parent.Width/2.5
+                                    - btnAgregar_Equipo_Ubicacion:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          Fill: =Color.Green
+                                          Font: =Font.'Segoe UI'
+                                          Height: '=Parent.Height - Parent.PaddingTop '
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =RGBA(16, 110, 190, 1)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =UpdateContext({ locMostrarMenuAsignar: !locMostrarMenuAsignar })
+                                          PaddingBottom: =8
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =RGBA(16, 110, 190, 1)
+                                          RadiusBottomLeft: =6
+                                          RadiusBottomRight: =6
+                                          RadiusTopLeft: =6
+                                          RadiusTopRight: =6
+                                          Size: =13
+                                          Text: ="+Asignar Equipo"
+                                    - btnDesvincular_Equipo:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =locColorGris300
+                                          DisplayMode: =If(CountRows(colEquiposSeleccionados) > 0, DisplayMode.Edit, DisplayMode.Disabled)
+                                          Fill: =locColorPeligro
+                                          Font: =Font.'Segoe UI'
+                                          Height: =Parent.Height - Parent.PaddingTop
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =RGBA(16, 110, 190, 1)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =UpdateContext({ locMostrarConfirmacionDesvincular: true })
+                                          PaddingBottom: =8
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =RGBA(16, 110, 190, 1)
+                                          RadiusBottomLeft: =6
+                                          RadiusBottomRight: =6
+                                          RadiusTopLeft: =6
+                                          RadiusTopRight: =6
+                                          Size: =13
+                                          Text: ="Desvincular"
+                                          Width: =120
+                              - lblInfo_Equipos:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =locTema_TextoSecundario
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =30
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Size: =12
+                                    Text: |-
+                                      =If(locEsHijo,
+                                          "Equipos ubicados en la línea: " & locItemSeleccionado.Title,
+                                          "Equipos ubicados en el sector: " & locItemSeleccionado.Title
+                                      )
+                                    Width: =Parent.Width
+                              - conHeaderTabla_Planta:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =40
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =15
+                                    PaddingRight: =15
+                                    PaddingTop: =8
+                                  Children:
+                                    - chkSeleccionarTodo:
+                                        Control: Classic/CheckBox@2.1.0
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Center
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          BorderThickness: =2
+                                          CheckboxBorderColor: =RGBA(96, 94, 92, 1)
+                                          CheckboxSize: =30
+                                          CheckmarkFill: =RGBA(0, 120, 212, 1)
+                                          Color: =RGBA(50, 49, 48, 1)
+                                          Default: |-
+                                            =CountRows(colEquiposSeleccionados) > 0 && 
+                                            CountRows(colEquiposSeleccionados) = galEquiposInstalados.AllItemsCount
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          FocusedBorderThickness: =4
+                                          Font: =Font.'Segoe UI'
+                                          Height: =30
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(50, 49, 48, 1)
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnCheck: =ClearCollect(colEquiposSeleccionados, galEquiposInstalados.AllItems)
+                                          OnUncheck: =Clear(colEquiposSeleccionados)
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(50, 49, 48, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Text: =
+                                          Visible: =!IsEmpty(colEquiposSeleccionados)
+                                          Width: =30
+                                    - lblHead_Estado:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Center
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          BorderThickness: =2
+                                          Color: =locTema_TablaTextoHeader
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          FocusedBorderThickness: =4
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          Text: ="Estado"
+                                          Width: =100
+                                    - lblHead_Nombre:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Center
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          BorderThickness: =2
+                                          Color: =locTema_TablaTextoHeader
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          FillPortions: =1
+                                          FocusedBorderThickness: =4
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          PaddingLeft: =20
+                                          Text: ="Equipo"
+                                    - lblHead_Detalles:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Center
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          BorderThickness: =2
+                                          Color: =RGBA(50, 49, 48, 1)
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          FocusedBorderThickness: =4
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          Text: ="Código / Ubicación"
+                                          Width: =200
+                              - galEquiposInstalados:
+                                  Control: Gallery@2.15.0
+                                  Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                                  Properties:
+                                    BorderColor: =RGBA(245, 245, 245, 1)
+                                    Items: |-
+                                      =SortByColumns(
+                                          Filter(spEquipos,
+                                              // 1. Filtro Jerárquico
+                                              (
+                                                  (locEsHijo && LineaID = locItemSeleccionado.ID) ||  // Caso Línea
+                                                  (!locEsHijo && SectorID = locItemSeleccionado.ID)   // Caso Sector (Global)
+                                              ),
+                                              // 2. Solo Activos
+                                              Activo = true,
+                                              // 3. Buscador Local
+                                              IsBlank(txtBuscador_EquiposLocal.Value) || StartsWith(Title, txtBuscador_EquiposLocal.Value)
+                                          ),
+                                          "Title", SortOrder.Ascending
+                                      )
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: =
+                                    TemplateSize: =60
+                                  Children:
+                                    - conFila_Equipo:
+                                        Control: GroupContainer@1.4.0
+                                        Variant: AutoLayout
+                                        Properties:
+                                          Fill: |-
+                                            =If(
+                                                ThisItem in colEquiposSeleccionados, 
+                                                locTema_TablaFondoHover,
+                                                Color.Transparent
+                                            )
+                                          Height: =Parent.TemplateHeight
+                                          LayoutAlignItems: =LayoutAlignItems.Center
+                                          LayoutDirection: =LayoutDirection.Horizontal
+                                          PaddingBottom: =8
+                                          PaddingLeft: =15
+                                          PaddingRight: =15
+                                          PaddingTop: =8
+                                          Width: =Parent.TemplateWidth
+                                        Children:
+                                          - chkSeleccionar_Fila:
+                                              Control: Classic/CheckBox@2.1.0
+                                              Properties:
+                                                AlignInContainer: =AlignInContainer.Center
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                BorderThickness: =2
+                                                CheckboxBorderColor: =RGBA(96, 94, 92, 1)
+                                                CheckboxSize: =30
+                                                CheckmarkFill: =RGBA(0, 120, 212, 1)
+                                                Color: =RGBA(50, 49, 48, 1)
+                                                Default: =ThisItem.ID in colEquiposSeleccionados.ID
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                FocusedBorderThickness: =4
+                                                Font: =Font.'Segoe UI'
+                                                Height: =30
+                                                HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                                HoverColor: =RGBA(50, 49, 48, 1)
+                                                HoverFill: =RGBA(0, 0, 0, 0)
+                                                OnCheck: =Collect(colEquiposSeleccionados, ThisItem)
+                                                OnUncheck: =RemoveIf(colEquiposSeleccionados, ID = ThisItem.ID)
+                                                PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                                PressedColor: =RGBA(50, 49, 48, 1)
+                                                PressedFill: =RGBA(0, 0, 0, 0)
+                                                Text: =
+                                                Visible: =chkSeleccionarTodo.Visible
+                                                Width: =30
+                                                X: =40
+                                                Y: =40
+                                          - btnBadge_Estado_Planta:
+                                              Control: Classic/Button@2.2.0
+                                              Properties:
+                                                AlignInContainer: =AlignInContainer.Center
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                Color: =Color.White
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                DisabledFill: =RGBA(242, 242, 241, 0)
+                                                DisplayMode: =DisplayMode.View
+                                                Fill: |-
+                                                  =Switch(ThisItem.EstadoOperativo,
+                                                      "Operativo", locColorExito,
+                                                      "Mantenimiento", locColorAdvertencia,
+                                                      "Fuera de Servicio", locColorPeligro,
+                                                      locColorGris400
+                                                  )
+                                                Font: =Font.'Segoe UI'
+                                                Height: =24
+                                                HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                                HoverColor: =RGBA(255, 255, 255, 1)
+                                                HoverFill: =RGBA(16, 110, 190, 1)
+                                                LayoutMinHeight: =16
+                                                LayoutMinWidth: =16
+                                                OnSelect: =Select(btnSeleccionar_Fila)
+                                                PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                                PressedColor: =RGBA(255, 255, 255, 1)
+                                                PressedFill: =RGBA(16, 110, 190, 1)
+                                                RadiusBottomLeft: =12
+                                                RadiusBottomRight: =12
+                                                RadiusTopLeft: =12
+                                                RadiusTopRight: =12
+                                                Size: =10
+                                                Text: =ThisItem.EstadoOperativo
+                                                Width: =lblHead_Estado.Width
+                                          - lblDato_Nombre:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Align: =Align.Center
+                                                AlignInContainer: =AlignInContainer.Center
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                BorderThickness: =2
+                                                Color: =RGBA(50, 49, 48, 1)
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                FillPortions: =1
+                                                FocusedBorderThickness: =4
+                                                Font: =Font.'Segoe UI'
+                                                FontWeight: =FontWeight.Semibold
+                                                LayoutMinHeight: =16
+                                                LayoutMinWidth: =16
+                                                OnSelect: =Select(btnSeleccionar_Fila)
+                                                PaddingLeft: =lblHead_Nombre.PaddingLeft
+                                                Text: =ThisItem.Title
+                                          - lblDato_Detalles:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Align: =Align.Center
+                                                AlignInContainer: =AlignInContainer.Center
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                BorderThickness: =2
+                                                Color: =locTema_TextoSecundario
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                FocusedBorderThickness: =4
+                                                Font: =Font.'Segoe UI'
+                                                LayoutMinHeight: =16
+                                                LayoutMinWidth: =16
+                                                OnSelect: =Select(btnSeleccionar_Fila)
+                                                Size: =11
+                                                Text: |-
+                                                  =// Siempre mostramos el Código del equipo (Prioridad 1)
+                                                  ThisItem.CodigoEquipo & 
+
+                                                  // Si estamos viendo el Sector Global (!locEsHijo), agregamos la Línea debajo
+                                                  If(!locEsHijo,
+                                                      Char(10) & // Salto de línea
+                                                      Coalesce(LookUp(colUbicacionesRaw, ID=ThisItem.LineaID).Title, "Sin Asignar")
+                                                  )
+                                                Width: =lblHead_Detalles.Width
+                                    - btnSeleccionar_Fila:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =Color.Transparent
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =RGBA(255, 255, 255, 1)
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          Fill: =Color.Transparent
+                                          Font: =Font.'Segoe UI'
+                                          Height: =Parent.TemplateHeight
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =Color.Transparent
+                                          OnSelect: |-
+                                            =If(
+                                                // Verificamos si ya está en la bolsa
+                                                ThisItem.ID in colEquiposSeleccionados.ID,
+
+                                                // SI ESTÁ -> Lo sacamos (Deseleccionar)
+                                                RemoveIf(colEquiposSeleccionados, ID = ThisItem.ID),
+
+                                                // NO ESTÁ -> Lo metemos (Seleccionar)
+                                                Collect(colEquiposSeleccionados, ThisItem)
+                                            )
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =Color.Transparent
+                                          RadiusBottomLeft: =0
+                                          RadiusBottomRight: =0
+                                          RadiusTopLeft: =0
+                                          RadiusTopRight: =0
+                                          Text: =
+                                          Width: =btnBadge_Estado_Planta.Width + btnBadge_Estado_Planta.X + lblDato_Nombre.Width
+                                          X: =btnBadge_Estado_Planta.X

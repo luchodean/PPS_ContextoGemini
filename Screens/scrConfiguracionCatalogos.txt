@@ -1,0 +1,1693 @@
+Screens:
+  scrConfiguracionCatalogos:
+    Properties:
+      Fill: =locTema_FondoPagina
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: |-
+        =Set(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);
+        UpdateContext({locMostrarFormulario: false});
+        UpdateContext({locMostrarConfirmacion: false});
+    Children:
+      - cmpHeader_1:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Fill: =RGBA(42, 47, 56, 1)
+            Height: =70
+            LongitudHorizontal: =700
+            TriggerReset: =true
+            Width: =Parent.Width
+      - cmpSidebar_1:
+          Control: CanvasComponent
+          ComponentName: cmpSidebar
+          Properties:
+            Fill: =Color.Transparent
+            Height: =App.Height - cmpHeader_1.Height
+            Navegacion: =Navigate(LookUp(colNav, Id=varActiveId, Screen))
+            Width: =If(varMenuCompacto, 80, 265)
+            Y: =cmpHeader_1.Height
+      - cmpHeaderSeccion_1:
+          Control: CanvasComponent
+          ComponentName: cmpHeaderSeccion
+          Properties:
+            Fill: =Color.Transparent
+            Height: =80
+            Subtitle: =LookUp(colNav, Id = varActiveId).Breadcrumb
+            Title: =LookUp(colNav, Id = varActiveId).PageTitle
+            Width: =App.Width - cmpSidebar_1.Width
+            X: =cmpSidebar_1.Width
+            Y: =cmpHeader_1.Height
+      - conMain:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height - Self.Y
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =5
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Width: =cmpHeaderSeccion_1.Width
+            X: =cmpHeaderSeccion_1.X
+            Y: =150
+          Children:
+            - conBarraSuperior:
+                Control: GroupContainer@1.4.0
+                Variant: ManualLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  Fill: =locColorGris100
+                  FillPortions: =0
+                  Height: =80
+                  LayoutMaxHeight: =80
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =16
+                  Width: =Parent.Width
+                  X: =Parent.X
+                Children:
+                  - ddSelectorCatalogo:
+                      Control: Classic/DropDown@2.3.1
+                      Properties:
+                        BorderColor: =locColorGris400
+                        BorderThickness: =1
+                        ChevronBackground: =locColorGris200
+                        ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+                        ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+                        ChevronFill: =locColorGris900
+                        ChevronHoverBackground: =locColorGris300
+                        ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                        Color: =locColorGris900
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(242, 242, 241, 0)
+                        DisabledFill: =RGBA(242, 242, 241, 0)
+                        Fill: =Color.White
+                        FocusedBorderThickness: =1
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        HoverBorderColor: =locColorGris600
+                        HoverColor: =RGBA(50, 49, 48, 1)
+                        HoverFill: =RGBA(245, 245, 245, 1)
+                        Items: =["Tipos de Equipos", "Especialidades", "Proveedores"]
+                        Items.Value: =Value
+                        OnChange: =
+                        PaddingBottom: =1
+                        PaddingLeft: =12
+                        PaddingRight: =5
+                        PaddingTop: =0
+                        PressedBorderColor: =RGBA(16, 110, 190, 1)
+                        PressedColor: =RGBA(255, 255, 255, 1)
+                        PressedFill: =locColorPrimario
+                        SelectionColor: =locColorGris900
+                        SelectionFill: =locColorPrimario
+                        Size: =15
+                        Width: =250
+                        X: =20
+                        Y: =(Parent.Height - Self.Height) / 2
+                  - btnNuevoRegistro:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        Color: =Color.White
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        DisabledFill: =RGBA(242, 242, 241, 0)
+                        Fill: =Color.Green
+                        Font: =Font.'Segoe UI'
+                        HoverBorderColor: =RGBA(0, 0, 0, 0)
+                        HoverColor: =RGBA(255, 255, 255, 1)
+                        HoverFill: =ColorFade(Self.Fill, -20%)
+                        OnSelect: |-
+                          =// 1. Limpieza preventiva
+                          UpdateContext({ locRegistroSeleccionado: Blank() });
+                          Reset(txtCampoFormulario1);
+                          Reset(txtCampoFormulario2);
+                          Reset(txtCampoFormulario3);
+                          Reset(txtCampoFormulario4);
+                          Reset(txtCampoFormulario5);
+
+                          // 2. Configuramos modo nuevo y mostramos
+                          UpdateContext({
+                              locModoFormulario: "Nuevo",
+                              locMostrarFormulario: true,
+                              locMostrarConfirmacion: false
+                          });
+
+                          // 3. En caso de querer crear registro de tipo de equipo, creamos la coleccion temporal
+
+                          If(ddSelectorCatalogo.Selected.Value = "Tipos de equipos", Clear(colCamposConfig))
+                        PaddingBottom: =4
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =RGBA(0, 69, 120, 1)
+                        PressedColor: =RGBA(255, 255, 255, 1)
+                        PressedFill: =ColorFade(Self.Fill, -40%)
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Text: ="+ Nuevo registro"
+                        Tooltip: ="Crear nuevo registro"
+                        Width: =200
+                        X: =Parent.Width - Self.Width - 20
+                        Y: =ddSelectorCatalogo.Y
+            - conEncabezados:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  Fill: =locColorGris100
+                  FillPortions: =0
+                  Height: =50
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =5
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  Width: =Parent.Width
+                  Y: =10
+                Children:
+                  - lblCampo1:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |-
+                          =Switch(
+                              ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", "NOMBRE DEL EQUIPO",
+                              "Especialidades", "ESPECIALIDAD",
+                              "Proveedores", "RAZÓN SOCIAL",
+                              ""
+                          )
+                        Width: =200
+                        X: =20
+                  - lblCampo2:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1.1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |-
+                          =Switch(
+                              ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", "DESCRIPCIÓN",
+                              "Especialidades", "DESCRIPCIÓN",
+                              "Proveedores", "NOMBRE DE CONTACTO",
+                              ""
+                          )
+                        Width: =500
+                        X: =lblCampo1.X + lblCampo1.Width
+                  - lblCampo3:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |-
+                          =Switch(
+                              ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", "CAMPOS REQUERIDOS",
+                              "Especialidades", "",
+                              "Proveedores", "RUBRO",
+                              ""
+                          )
+                        Visible: |-
+                          =Switch(ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", true,  
+                              "Proveedores", true,      
+                              "Fabricantes", true,      
+                              "Especialidades", false     
+                          )
+                        Width: =500
+                        X: =lblCampo2.X + lblCampo2.Width
+                  - lblCampo4:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |-
+                          =Switch(
+                              ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", "",
+                              "Especialidades", "",
+                              "Proveedores", "DIRECCIÓN",
+                              ""
+                          )
+                        Visible: |-
+                          =Switch(ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", false,  
+                              "Proveedores", true,      
+                              "Fabricantes", false,      
+                              "Especialidades", false     
+                          )
+                        Width: =500
+                        X: =lblCampo2.X + lblCampo2.Width
+                  - lblCampo5:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |-
+                          =Switch(
+                              ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", "",
+                              "Especialidades", "",
+                              "Proveedores", "TELÉFONO",
+                              ""
+                          )
+                        Visible: |-
+                          =Switch(ddSelectorCatalogo.Selected.Value,
+                              "Tipos de Equipos", false,  
+                              "Proveedores", true,      
+                              "Fabricantes", false,      
+                              "Especialidades", false     
+                          )
+                        Width: =500
+                        X: =lblCampo2.X + lblCampo2.Width
+                  - lblCampo6:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: ="ACCIÓN"
+                        Width: =180
+                        X: =lblCampo2.X + lblCampo2.Width
+            - conCuerpoTablas:
+                Control: GroupContainer@1.4.0
+                Variant: ManualLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =16
+                  Width: =Parent.Width
+                Children:
+                  - galProveedores:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Height: =Parent.Height
+                        Items: |-
+                          =SortByColumns(
+                              spCatalogosProveedores,
+                              "Activo", SortOrder.Descending,
+                              "Title", SortOrder.Ascending
+                          )
+                        TemplateSize: =50
+                        Visible: =ddSelectorCatalogo.Selected.Value = "Proveedores"
+                        Width: =Parent.Width
+                      Children:
+                        - conRegistros_4:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =Parent.TemplateHeight
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =5
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - lblCampoTabla1_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo1.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Title
+                                    Visible: =lblCampo1.Visible
+                              - lblCampoTabla2_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo2.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.ContactoNombre
+                                    Visible: =lblCampo2.Visible
+                              - lblCampoTabla3_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo3.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Rubro
+                                    Visible: =lblCampo3.Visible
+                              - lblCampoTabla4_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo4.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Direccion
+                                    Visible: =lblCampo4.Visible
+                              - lblCampoTabla5_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo5.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Telefono
+                                    Visible: =lblCampo5.Visible
+                              - conAccionTabla_4:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.SetByContainer
+                                    BorderStyle: =BorderStyle.None
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutJustifyContent: =LayoutJustifyContent.Center
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Width: =lblCampo6.Width
+                                    X: =lblCampo6.X
+                                  Children:
+                                    - IconEdit_4:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locColorGris500
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locColorPrimario
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Edit
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =UpdateContext({
+                                                locModoFormulario: "Editar",
+                                                locMostrarFormulario: true,
+                                                locRegistroSeleccionado: ThisItem 
+                                            })
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(16, 110, 190, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: ="Editar registro"
+                                          Width: =40
+                                          X: =199
+                                    - IconDelete_4:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =If(ThisItem.Activo, locColorPeligro, locColorExito)
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =ColorFade(Self.Color, -20%)
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =If(ThisItem.Activo, Icon.Trash, Icon.Reload)
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =If(
+                                                !ThisItem.Activo,
+                                                // CASO RESTAURAR: Lo reactivamos directamente
+                                                Patch(spCatalogosProveedores, ThisItem, {Activo: true}),
+
+                                                // CASO ELIMINAR: Abrimos popup de confirmación
+                                                UpdateContext({ locRegistroSeleccionado: ThisItem });
+                                                UpdateContext({ locMostrarConfirmacion: true })
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =ColorFade(Self.Color, -40%)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: =If(ThisItem.Activo, "Eliminar Registro", "Restaurar Registro")
+                                          Width: =40
+                                          Y: =Parent.Height / 2 - Self.Height / 2
+                  - galEspecialidades:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Height: =Parent.Height
+                        Items: |-
+                          =SortByColumns(
+                              spCatalogoEspecialidades,
+                              "Activo", SortOrder.Descending,
+                              "Title", SortOrder.Ascending
+                          )
+                        TemplateSize: =50
+                        Visible: =ddSelectorCatalogo.Selected.Value = "Especialidades"
+                        Width: =Parent.Width
+                      Children:
+                        - conRegistros_2:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =Parent.TemplateHeight
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =5
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - lblCampoTabla1_2:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo1.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Title
+                                    Visible: =lblCampo1.Visible
+                              - lblCampoTabla2_2:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, Color.Gray)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo2.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Descripcion
+                                    Visible: =lblCampo2.Visible
+                              - conAccionTabla_2:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.SetByContainer
+                                    BorderStyle: =BorderStyle.None
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutJustifyContent: =LayoutJustifyContent.Center
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Width: =lblCampo6.Width
+                                    X: =lblCampo6.X
+                                  Children:
+                                    - IconEdit_2:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locColorGris500
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locColorPrimario
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Edit
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =UpdateContext({ locModoFormulario: "Editar" });
+                                            UpdateContext({ locRegistroSeleccionado: ThisItem });
+                                            UpdateContext({ locMostrarFormulario: true });
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(16, 110, 190, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: ="Editar registro"
+                                          Width: =40
+                                          X: =199
+                                    - IconDelete_2:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =If(ThisItem.Activo, locColorPeligro, locColorExito)
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =ColorFade(Self.Color, -20%)
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =If(ThisItem.Activo, Icon.Trash, Icon.Reload)
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =If(
+                                                !ThisItem.Activo,
+                                                // CASO RESTAURAR: Lo reactivamos directamente
+                                                Patch(spCatalogoEspecialidades, ThisItem, {Activo: true}),
+
+                                                // CASO ELIMINAR: Abrimos popup de confirmación
+                                                UpdateContext({ locRegistroSeleccionado: ThisItem });
+                                                UpdateContext({ locMostrarConfirmacion: true })
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =ColorFade(Self.Color, -40%)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: =If(ThisItem.Activo, "Eliminar Registro", "Restaurar Registro")
+                                          Width: =40
+                                          Y: =Parent.Height / 2 - Self.Height / 2
+                  - galTiposEquipos:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Height: =Parent.Height
+                        Items: |-
+                          =SortByColumns(
+                              spCatalogosTiposEquipo,
+                              "Activo", SortOrder.Descending,
+                              "Title", SortOrder.Ascending
+                          )
+                        TemplateSize: =50
+                        Visible: =ddSelectorCatalogo.Selected.Value = "Tipos de Equipos"
+                        Width: =Parent.Width
+                      Children:
+                        - conRegistros_1:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =Parent.TemplateHeight
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =5
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - lblCampoTabla1_1:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, RGBA(170, 170, 170, 1))
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo1.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Title
+                                    Visible: =lblCampo1.Visible
+                              - lblCampoTabla2_1:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, RGBA(170, 170, 170, 1))
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo2.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: =ThisItem.Descripcion
+                                    Visible: =lblCampo2.Visible
+                              - lblCampoTabla3_1:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =If(ThisItem.Activo, locColorGris900, RGBA(170, 170, 170, 1))
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblCampo3.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =Parent.Height
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =10
+                                    PaddingRight: =10
+                                    Text: |-
+                                      =// Variante con Unidad
+                                      Concat(
+                                          Filter(
+                                              Table(ParseJSON(ThisItem.CamposPersonalizados)),
+                                              Coalesce(Boolean(Value.Activo), true)
+                                          ),
+                                          Text(Value.Nombre) & If(!IsBlank(Text(Value.Unidad)), " (" & Text(Value.Unidad) & ")", ""),
+                                          ", "
+                                      )
+                                    Visible: =lblCampo3.Visible
+                              - conAccionTabla_1:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.SetByContainer
+                                    BorderStyle: =BorderStyle.None
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutJustifyContent: =LayoutJustifyContent.Center
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Width: =lblCampo6.Width
+                                    X: =lblCampo6.X
+                                  Children:
+                                    - IconEdit_1:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locColorGris500
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locColorPrimario
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Edit
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =// 1. Configuración de contexto UI (Aquí definimos que estamos EDITANDO)
+                                            UpdateContext({ locModoFormulario: "Editar" });
+                                            UpdateContext({ locRegistroSeleccionado: ThisItem });
+
+                                            // 2. Carga Inteligente de Campos Personalizados (Gestión de GUIDs)
+                                            If(
+                                                !IsBlank(ThisItem.CamposPersonalizados),
+                                                ClearCollect(colCamposConfig,
+                                                    ForAll(
+                                                        Table(ParseJSON(ThisItem.CamposPersonalizados)),
+                                                        {
+                                                            // A. IDENTIDAD: Mantenemos ID o generamos uno si es dato viejo
+                                                            _ID: Coalesce(Text(Value.ID), Text(GUID())),
+
+                                                            // B. DATOS VISUALES
+                                                            Nombre: Text(Value.Nombre),
+                                                            Unidad: Text(Value.Unidad),
+                                                            Requerido: Boolean(Value.Requerido),
+
+                                                            // C. ESTADO: Mantenemos el estado activo/inactivo
+                                                            Activo: Coalesce(Boolean(Value.Activo), true),
+
+                                                            // D. BANDERA: Marcamos que NO es nuevo (evita borrado físico)
+                                                            _EsNuevo: false
+                                                        }
+                                                    )
+                                                ),
+                                                // Si el registro no tenía JSON, iniciamos la colección vacía
+                                                Clear(colCamposConfig)
+                                            );
+
+                                            // 3. Mostrar formulario (Recién ahora levantamos el popup)
+                                            UpdateContext({ locMostrarFormulario: true });
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(16, 110, 190, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: ="Editar registro"
+                                          Width: =40
+                                          X: =199
+                                    - IconDelete_1:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: |-
+                                            =If(ThisItem.Activo, locColorPeligro, locColorExito) 
+                                            // Usa tus variables globales: Rojo para borrar, Verde para restaurar
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =ColorFade(Self.Color, -20%)
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =If(ThisItem.Activo, Icon.Trash, Icon.Reload)
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =If(
+                                                ThisItem.Activo,
+
+                                                UpdateContext({ locRegistroSeleccionado: ThisItem });
+                                                UpdateContext({ locMostrarConfirmacion: true }),
+
+                                                Patch(
+                                                    spCatalogosTiposEquipo,
+                                                    ThisItem, 
+                                                    {Activo: true}
+                                                );
+                                                Notify("Registro restaurado exitosamente.", NotificationType.Success)
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =ColorFade(Self.Color, -40%)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: =If(ThisItem.Activo, "Eliminar registro", "Restaurar registro")
+                                          Width: =40
+                                          Y: =Parent.Height / 2 - Self.Height / 2
+      - conOverlayTotal:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =locTema_FondoOverlay
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Visible: |+
+              =locMostrarFormulario || locMostrarConfirmacion
+            Width: =Parent.Width
+          Children:
+            - conTarjetaFormulario:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  DropShadow: =DropShadow.ExtraBold
+                  Fill: =Color.White
+                  FillPortions: =0
+                  Height: =700
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =0
+                  PaddingBottom: =20
+                  PaddingLeft: =30
+                  PaddingRight: =30
+                  PaddingTop: =30
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Visible: =locMostrarFormulario
+                  Width: =400
+                Children:
+                  - lblTituloFormulario:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris900
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =50
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingTop: =10
+                        Size: =16
+                        Text: "=If(\r\n    locModoFormulario = \"Nuevo\",\r\n    \r\n    // CASO NUEVO: Texto genérico\r\n    \"Nuevo Registro en \" & ddSelectorCatalogo.Selected.Value,\r\n    \r\n    // CASO EDITAR: Muestra el nombre específico que se está editando\r\n    \"Editando: \" & \r\n    locRegistroSeleccionado.Title\r\n)"
+                        Width: =Parent.Width
+                  - conCuerpoFormulario:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =10
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        X: =40
+                        Y: =40
+                      Children:
+                        - lblCampoFormulario1:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Text: |-
+                                =Switch(ddSelectorCatalogo.Selected.Value,
+                                    "Tipos de Equipos", "Tipo de Equipo",
+                                    "Especialidades", "Especialidad",
+                                    "Proveedores", "Razón Social"
+                                )
+                              Width: =Parent.Width
+                        - txtCampoFormulario1:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Placeholder: =
+                              Required: =true
+                              ValidationState: |-
+                                =If(
+                                    IsBlank(Self.Value), 
+                                    "Error",
+                                    "None"
+                                )
+                              Value: |-
+                                =If(locModoFormulario = "Nuevo", "",
+                                    Switch(ddSelectorCatalogo.Selected.Value,
+                                        "Tipos de Equipos", LookUp(spCatalogosTiposEquipo, ID=locRegistroSeleccionado.ID).Title,
+                                        "Especialidades",   LookUp(spCatalogoEspecialidades, ID=locRegistroSeleccionado.ID).Title,
+                                        "Proveedores",      LookUp(spCatalogosProveedores, ID=locRegistroSeleccionado.ID).Title
+                                    )
+                                )
+                        - lblCampoFormulario2:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Text: |-
+                                =Switch(ddSelectorCatalogo.Selected.Value, 
+                                    "Proveedores", "Nombre Contacto",
+                                    "Tipos de Equipos", "Prefijo",
+                                    "Descripción"
+                                )
+                              Width: =Parent.Width
+                        - txtCampoFormulario2:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Value: |-
+                                =If(locModoFormulario = "Nuevo", "",
+                                    Switch(ddSelectorCatalogo.Selected.Value,
+                                        "Tipos de Equipos", LookUp(spCatalogosTiposEquipo, ID=locRegistroSeleccionado.ID).Prefijo,
+                                        "Especialidades",   LookUp(spCatalogoEspecialidades, ID=locRegistroSeleccionado.ID).Descripcion,
+                                        "Proveedores",      LookUp(spCatalogosProveedores, ID=locRegistroSeleccionado.ID).ContactoNombre
+                                    )
+                                )
+                        - lblCampoFormulario3:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Text: |-
+                                =Switch(ddSelectorCatalogo.Selected.Value,  
+                                    "Proveedores", "Rubro",
+                                    "Tipos de Equipos", "Descripción"
+                                )
+                              Width: =Parent.Width
+                        - txtCampoFormulario3:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Value: |-
+                                =If(locModoFormulario = "Nuevo", "",
+                                    Switch(ddSelectorCatalogo.Selected.Value,
+                                        "Tipos de Equipos", LookUp(spCatalogosTiposEquipo, ID=locRegistroSeleccionado.ID).Descripcion,
+                                        "Proveedores",      LookUp(spCatalogosProveedores, ID=locRegistroSeleccionado.ID).Rubro,
+                                        "" 
+                                    )
+                                )
+                              Visible: |
+                                =ddSelectorCatalogo.Selected.Value in ["Fabricantes", "Tipos de Equipos"]
+                        - lblCampoFormulario4:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Text: |-
+                                =//"Dirección"
+                                If(ddSelectorCatalogo.Selected.Value = "Tipos de Equipos", "Campos Personalizados", "Dirección")
+                              Visible: =ddSelectorCatalogo.Selected.Value in ["Proveedores", "Tipos de Equipos"]
+                              Width: =Parent.Width
+                        - conEncabezadosCamposPersonalizados:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              AlignInContainer: =AlignInContainer.SetByContainer
+                              FillPortions: =0
+                              Height: =lblCampoFormulario2.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =10
+                              LayoutJustifyContent: =LayoutJustifyContent.Center
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Tipos de Equipos"
+                              Width: =Parent.Width
+                            Children:
+                              - lblNombreCampo:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =1
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: ="Nombre"
+                              - lblUnidadCampo:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =1
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: ="Unidad"
+                              - lblCheckCampo:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =1
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: ="Obligatorio"
+                        - galEditorCampos:
+                            Control: Gallery@2.15.0
+                            Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Center
+                              BorderColor: =RGBA(245, 245, 245, 1)
+                              Height: =260
+                              Items: =Sort(colCamposConfig, Activo, SortOrder.Descending)
+                              LayoutMaxHeight: =200
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =16
+                              TemplateSize: =45
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Tipos de Equipos"
+                              Width: =Parent.Width
+                            Children:
+                              - conRegistrosCampos:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    Height: =conEncabezadosCamposPersonalizados.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =conEncabezadosCamposPersonalizados.LayoutGap
+                                    PaddingLeft: =conEncabezadosCamposPersonalizados.PaddingLeft
+                                    Width: =Parent.Width
+                                  Children:
+                                    - txtColNombre:
+                                        Control: TextInput@0.0.54
+                                        Properties:
+                                          Align: =Align.Center
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnChange: =
+                                          Required: =true
+                                          Value: =ThisItem.Nombre
+                                          Width: =lblNombreCampo.Width
+                                    - txtColUnidad:
+                                        Control: TextInput@0.0.54
+                                        Properties:
+                                          Align: =Align.Center
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnChange: =
+                                          Value: =ThisItem.Unidad
+                                          Width: =lblUnidadCampo.Width
+                                    - chkColReq:
+                                        Control: CheckBox@0.0.30
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Center
+                                          Checked: =ThisItem.Requerido
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          FontStrikethrough: =true
+                                          Height: =Parent.Height
+                                          Label: =
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnCheck: |-
+                                            =Patch(colCamposConfig, ThisItem, {
+                                                Requerido: true,
+                                                Nombre: txtColNombre.Value, 
+                                                Unidad: txtColUnidad.Value
+                                            })
+                                          OnUncheck: |-
+                                            =Patch(colCamposConfig, ThisItem, {
+                                                Requerido: false,
+                                                Nombre: txtColNombre.Value, 
+                                                Unidad: txtColUnidad.Value
+                                            })
+                                          Width: =lblCheckCampo.Width - 60
+                              - IcoBorrar:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    Color: =If(!ThisItem.Activo, locColorExito, locColorPeligro)
+                                    DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                    DisabledColor: =RGBA(225, 223, 221, 1)
+                                    DisabledFill: =RGBA(0, 0, 0, 0)
+                                    FocusedBorderThickness: =4
+                                    Height: =20
+                                    HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                    HoverColor: =RGBA(16, 110, 190, 1)
+                                    HoverFill: =RGBA(0, 0, 0, 0)
+                                    Icon: =If(!ThisItem.Activo, Icon.Reload, Icon.Trash)
+                                    OnSelect: |-
+                                      =If(
+                                          ThisItem._EsNuevo,
+                                          // CASO 1: Es nuevo (no guardado en BD) -> Borrado Físico
+                                          Remove(colCamposConfig, ThisItem),
+
+                                          // CASO 2: Ya existe en BD (Histórico)
+                                          If(
+                                              ThisItem.Activo,
+                                              // Si estaba activo -> Soft Delete (Lo apagamos visualmente)
+                                              Patch(colCamposConfig, ThisItem, {Activo: false}),
+                                              // Si estaba inactivo -> Restaurar (Lo prendemos)
+                                              Patch(colCamposConfig, ThisItem, {Activo: true})
+                                          )
+                                      )
+                                    PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                    PressedColor: =RGBA(16, 110, 190, 1)
+                                    PressedFill: =RGBA(0, 0, 0, 0)
+                                    Tooltip: |-
+                                      =If(
+                                          ThisItem._EsNuevo,
+                                          "Eliminar registro completo",
+                                          If(
+                                              ThisItem.Activo,
+                                              "Desactivar campo",
+                                              "Restaurar campo"
+                                          )
+                                      )
+                                    Width: =20
+                                    X: =Parent.TemplateWidth - Self.Width - 10
+                                    Y: |
+                                      =10
+                        - cmbCategoriaProveedor:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              DefaultSelectedItems: |-
+                                =If(
+                                    locModoFormulario = "Nuevo",
+                                    [], 
+                                    // Convertimos el texto "A, B" de vuelta a una tabla para el Combo Box
+                                    Split(locRegistroSeleccionado.Categoria, ", ") 
+                                )
+                              InputTextPlaceholder: ="Buscar rubro..."
+                              Items: =lstMaestro_RubrosProveedores
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Proveedores"
+                        - txtCampoFormulario4:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Value: |-
+                                =If(locModoFormulario = "Nuevo", "",
+                                    If(ddSelectorCatalogo.Selected.Value = "Proveedores", 
+                                       LookUp(spCatalogosProveedores, ID=locRegistroSeleccionado.ID).Direccion, 
+                                       ""
+                                    )
+                                )
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Proveedores"
+                        - lblCampoFormulario5:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Text: ="Teléfono"
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Proveedores"
+                              Width: =Parent.Width
+                        - txtCampoFormulario5:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Value: |-
+                                =If(locModoFormulario = "Nuevo", "",
+                                    If(ddSelectorCatalogo.Selected.Value = "Proveedores", 
+                                       LookUp(spCatalogosProveedores, ID=locRegistroSeleccionado.ID).Telefono, 
+                                       ""
+                                    )
+                                )
+                              Visible: =ddSelectorCatalogo.Selected.Value = "Proveedores"
+                        - btnAgregarCampo:
+                            Control: Button@0.0.45
+                            Properties:
+                              Align: =Align.Center
+                              AlignInContainer: =AlignInContainer.Center
+                              BasePaletteColor: =RGBA(8, 222, 8, 1)
+                              Icon: ="Add"
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              OnSelect: |-
+                                =Collect(colCamposConfig, {
+                                    _ID: Text(GUID()),
+                                    Nombre: "",
+                                    Unidad: "",
+                                    Requerido: false,
+                                    Activo: true,
+                                    _EsNuevo: true
+                                });
+                              Text: ="Agregar Campo"
+                              Visible: =galEditorCampos.Visible
+                              Width: =160
+                              X: =40
+                              Y: =40
+                  - conBotones:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        FillPortions: =0
+                        Height: =50
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                      Children:
+                        - btnGuardar:
+                            Control: Button@0.0.45
+                            Properties:
+                              AcceptsFocus: =false
+                              DisplayMode: "=If(\r\n    // 1. Validación del encabezado principal\r\n    IsBlank(txtCampoFormulario1.Value) ||\r\n\r\n    // 2. Validación de la Galería \"en vivo\"\r\n    (\r\n        ddSelectorCatalogo.Selected.Value = \"Tipos de Equipos\" &&\r\n        // Miramos directamente los controles de la galería\r\n        CountRows(Filter(galEditorCampos.AllItems, IsBlank(txtColNombre.Value))) > 0\r\n    ),\r\n    \r\n    DisplayMode.Disabled, // Gris si falta algo\r\n    DisplayMode.Edit      // Activo si todo ok\r\n)"
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: "=UpdateContext({ locGuardando: true });\r\n\r\n// --- PASO 1: Recolección de Datos Visuales (Batch Save) ---\r\n// Es CRÍTICO incluir _ID, Activo y _EsNuevo para no perderlos al leer de la galería\r\nIf(\r\n    ddSelectorCatalogo.Selected.Value = \"Tipos de Equipos\",\r\n    ClearCollect(\r\n        colCamposConfig,\r\n        ForAll(\r\n            galEditorCampos.AllItems,\r\n            {\r\n                // Mantenemos los datos internos\r\n                _ID: _ID,\r\n                Activo: Activo,\r\n                _EsNuevo: _EsNuevo,\r\n\r\n                // Capturamos los cambios visuales\r\n                Nombre: txtColNombre.Value,\r\n                Unidad: txtColUnidad.Value,\r\n                Requerido: chkColReq.Checked\r\n            }\r\n        )\r\n    )\r\n);\r\n\r\n// --- PASO 2: Guardado en SharePoint ---\r\nSwitch(ddSelectorCatalogo.Selected.Value,\r\n\r\n    // --- CASO 1: TIPOS DE EQUIPOS ---\r\n    \"Tipos de Equipos\",\r\n    Patch(\r\n        spCatalogosTiposEquipo,\r\n        If(locModoFormulario = \"Nuevo\", Defaults(spCatalogosTiposEquipo), locRegistroSeleccionado),\r\n        {\r\n            Title: txtCampoFormulario1.Value,\r\n            Prefijo: txtCampoFormulario2.Value,\r\n            Descripcion: txtCampoFormulario3.Value,\r\n            \r\n            // GENERACIÓN DEL JSON BLINDADO\r\n            // Guardamos solo lo necesario, excluyendo columnas temporales como _EsNuevo\r\n            CamposPersonalizados: JSON(\r\n                ForAll(colCamposConfig,\r\n                {\r\n                    ID: _ID,\r\n                    Nombre: Nombre,\r\n                    Unidad: Unidad,\r\n                    Requerido: Requerido,\r\n                    Activo: Activo\r\n                }),\r\n                JSONFormat.Compact\r\n            ),\r\n            Activo: true\r\n        }\r\n    ),\r\n\r\n    // --- CASO 2: ESPECIALIDADES ---\r\n    \"Especialidades\",\r\n    Patch(\r\n        spCatalogoEspecialidades,\r\n        If(locModoFormulario = \"Nuevo\", Defaults(spCatalogoEspecialidades), locRegistroSeleccionado),\r\n        {\r\n            Title: txtCampoFormulario1.Value,\r\n            Descripcion: txtCampoFormulario2.Value,\r\n            Activo: true\r\n        }\r\n    ),\r\n\r\n    // --- CASO 3: PROVEEDORES ---\r\n    \"Proveedores\",\r\n    Patch(\r\n        spCatalogosProveedores,\r\n        If(locModoFormulario = \"Nuevo\", Defaults(spCatalogosProveedores), locRegistroSeleccionado),\r\n        {\r\n            Title: txtCampoFormulario1.Value,\r\n            ContactoNombre: txtCampoFormulario2.Value,\r\n            Rubro: Concat(cmbCategoriaProveedor.SelectedItems, Value, \", \"),\r\n            Direccion: txtCampoFormulario4.Value,\r\n            Telefono: txtCampoFormulario5.Value,\r\n            Activo: true\r\n        }\r\n    )\r\n);\r\n\r\nNotify(\r\n    \"El registro '\" & txtCampoFormulario1.Value & \"' se ha \" & \r\n    If(locModoFormulario = \"Nuevo\", \"creado\", \"actualizado\") & \r\n    \" correctamente.\",\r\n    NotificationType.Success\r\n);\r\n\r\n// --- PASO 3: Limpieza y Cierre ---\r\nClear(colCamposConfig);\r\nUpdateContext({ \r\n    locRegistroSeleccionado: Blank(),\r\n    locMostrarFormulario: false, \r\n    locGuardando: false,\r\n    locModoFormulario: Blank()\r\n});"
+                              Text: ="Guardar"
+                              X: =40
+                              Y: =40
+                        - btnCancelar:
+                            Control: Button@0.0.45
+                            Properties:
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =// 1. Limpiamos variable de registro
+                                UpdateContext({ locRegistroSeleccionado: Blank() });
+
+                                // 2. Reseteamos los inputs visuales usando tus nombres reales
+                                Reset(txtCampoFormulario1);
+                                Reset(txtCampoFormulario2);
+                                Reset(txtCampoFormulario3);
+                                Reset(txtCampoFormulario4);
+                                Reset(txtCampoFormulario5);
+
+                                // 3. Cerramos el formulario
+                                Clear(colCamposConfig);
+                                UpdateContext({ 
+                                    locMostrarFormulario: false,
+                                    locModoFormulario: Blank()
+                                });
+                              Text: ="Cancelar"
+                              X: =40
+                              Y: =40
+            - conTarjetaConfirmacion:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  BorderColor: =RGBA(200, 200, 200, 1)
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Bold
+                  Fill: =Color.White
+                  FillPortions: =0
+                  Height: =250
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =15
+                  LayoutJustifyContent: =LayoutJustifyContent.Center
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =20
+                  PaddingLeft: =20
+                  PaddingRight: =20
+                  PaddingTop: =20
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  Visible: =locMostrarConfirmacion
+                  Width: =450
+                Children:
+                  - lblTituloConfirmacion:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =RGBA(50, 49, 48, 1)
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        Fill: =RGBA(245, 245, 245, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =50
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        Size: =16
+                        Text: ="Confirmar Eliminación"
+                        Width: =Parent.Width
+                  - lblMensajeConfirmacion:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =RGBA(50, 49, 48, 1)
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        Height: =110
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        Text: |-
+                          ="¿Está seguro que desea eliminar '" & 
+                          locRegistroSeleccionado.Title & 
+                          "'?"
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =60
+                  - conBotonesConfirmacion:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        FillPortions: =0
+                        Height: =60
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =20
+                        LayoutJustifyContent: =LayoutJustifyContent.Center
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =Parent.Width
+                      Children:
+                        - btnConfirmarBorrado:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =Color.White
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =RGBA(220, 53, 69, 1)
+                              Font: =Font.'Segoe UI'
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(Self.Fill, -20%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({ locGuardando: true });
+                                Switch(ddSelectorCatalogo.Selected.Value,
+
+                                    // 1. TIPOS DE EQUIPOS
+                                    // Buscamos el registro fresco por ID en lugar de usar la variable "sucia"
+                                    "Tipos de Equipos",
+                                    Patch(
+                                        spCatalogosTiposEquipo, 
+                                        LookUp(spCatalogosTiposEquipo, ID = locRegistroSeleccionado.ID), 
+                                        {Activo: false}
+                                    ),
+
+                                    // 2. ESPECIALIDADES
+                                    "Especialidades",
+                                    Patch(
+                                        spCatalogoEspecialidades, 
+                                        LookUp(spCatalogoEspecialidades, ID = locRegistroSeleccionado.ID), 
+                                        {Activo: false}
+                                    ),
+
+                                    // 3. FABRICANTES
+                                    "Fabricantes",
+                                    Patch(
+                                        spCatalogosFabricantes, 
+                                        LookUp(spCatalogosFabricantes, ID = locRegistroSeleccionado.ID), 
+                                        {Activo: false}
+                                    ),
+
+                                    // 4. PROVEEDORES
+                                    "Proveedores",
+                                    Patch(
+                                        spCatalogosProveedores, 
+                                        LookUp(spCatalogosProveedores, ID = locRegistroSeleccionado.ID), 
+                                        {Activo: false}
+                                    )
+                                );
+
+                                Notify("Registro eliminado correctamente.", NotificationType.Success);
+
+                                UpdateContext({
+                                    locRegistroSeleccionado: Blank(),
+                                    locMostrarConfirmacion: false,
+                                    locGuardando: false
+                                });
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Text: ="Eliminar"
+                              Width: =180
+                              X: =240
+                              Y: =190
+                        - btnCancelarBorrado:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(Self.Fill = RGBA(230, 230, 230, 1), Color.Black, Color.White)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =RGBA(169, 169, 169, 1)
+                              Font: =Font.'Segoe UI'
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(Self.Fill, -20%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({
+                                    locRegistroSeleccionado: Blank(),
+                                    locMostrarConfirmacion: false
+                                });
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Text: ="Cancelar"
+                              Width: =180
+                              X: =30
+                              Y: =190

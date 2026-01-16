@@ -1,0 +1,1564 @@
+Screens:
+  scrEquiposGestionarEquipo:
+    Properties:
+      Fill: =Color.Transparent
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: "=Set(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);\r\n// 1. Resetear navegación interna\r\nUpdateContext({ locTabActiva: \"GENERAL\" });\r\n// 2. Lógica de Inicialización de Datos\r\nIf(\r\n    locModoVista = \"Nuevo\",\r\n    // --- CASO NUEVO ---\r\n    // Limpiamos colecciones\r\n    Clear(colDatosTecnicos);\r\n    Clear(colProveedoresAsignados);\r\n    // Reseteamos Inputs (Importante para que no queden datos viejos)\r\n    Reset(txtCodigoEquipo); Reset(txtNombreEquipo);\r\n    Reset(ddTipoEquipo); Reset(ddUbicacion_Sector); Reset(ddUbicacion_Linea); Reset(ddEstado);\r\n    Reset(txtMarcaEquipo); Reset(txtModeloEquipo); Reset(txtSerieEquipo),\r\n\r\n    // --- CASO EDITAR ---\r\n// Cargamos proveedores existentes pero \"Aplanando\" la estructura\r\nClearCollect(colProveedoresAsignados,\r\n    ForAll(\r\n        Filter(spEquiposProveedores, EquipoID = locRegistroEditar.ID && Activo = true),\r\n        {\r\n            // Guardamos el ID real de la tabla intermedia (para saber que ya existe en BD)\r\n            ID: ThisRecord.ID,\r\n            // Datos del Proveedor\r\n            ProveedorID: ThisRecord.ProveedorID,\r\n            // Buscamos el nombre bonito (porque en la tabla intermedia solo tenemos el ID numérico)\r\n            NombreProveedor: LookUp(spCatalogosProveedores, ID = ProveedorID).Title,       \r\n            TipoRelacion: ThisRecord.TipoRelacion,  \r\n            Activo: true,\r\n            EsNuevo: false // Marca para saber que este registro YA existe en SharePoint\r\n\r\n        }\r\n\r\n    )\r\n\r\n);\r\n// Cargamos datos tecnicos existentes pero \"Aplanando\" la estructura\r\nWith({\r\n    // Definimos los JSON origen para no repetir código dentro\r\n    _jsonPlantilla: LookUp(spCatalogosTiposEquipo, ID = locRegistroEditar.TipoEquipoID).CamposPersonalizados,\r\n    _jsonGuardado: Coalesce(locRegistroEditar.DatosTecnicosValores, \"[]\")\r\n},\r\n    ClearCollect(colDatosTecnicos,\r\n        ForAll(\r\n            // 1. FUENTE: Filtramos la plantilla igual que hiciste con spEquiposProveedores\r\n            Filter(\r\n                Table(ParseJSON(_jsonPlantilla)), \r\n                Boolean(Value.Activo) = true\r\n            ) As _campoCatalogo,\r\n\r\n            {\r\n                // Mapeo directo (Igual que ThisRecord.ID)\r\n                ID_Campo: Text(_campoCatalogo.Value.ID),\r\n                Nombre: Text(_campoCatalogo.Value.Nombre),\r\n                Unidad: Text(_campoCatalogo.Value.Unidad),\r\n                Requerido: Boolean(_campoCatalogo.Value.Requerido),\r\n                \r\n                // 2. LOOKUP: Buscamos el valor en el JSON guardado\r\n                // Estructura idéntica a: LookUp(spCatalogosProveedores, ID = ProveedorID).Title\r\n                Valor: Text(\r\n                LookUp(\r\n                    Table(ParseJSON(_jsonGuardado)), \r\n                    // Intenta coincidir ID_Campo (guardado) con ID (catalogo)\r\n                    Text(Value.ID_Campo) = Text(_campoCatalogo.Value.ID)\r\n                ).Value.Valor)\r\n            }\r\n        )\r\n    )\r\n);\r\n\r\n);"
+    Children:
+      - cmpHeader_GestionarEquipo:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Fill: =RGBA(42, 47, 56, 1)
+            Height: =70
+            LongitudHorizontal: =700
+            TriggerReset: =true
+            Width: =Parent.Width
+      - cmpSidebar_GestionarEquipo:
+          Control: CanvasComponent
+          ComponentName: cmpSidebar
+          Properties:
+            Fill: =Color.Transparent
+            Height: =App.Height - cmpHeader_GestionarEquipo.Height
+            Navegacion: =
+            Width: =If(varMenuCompacto, 80, 265)
+            Y: =cmpHeader_GestionarEquipo.Height
+      - cmpHeaderSeccion_GestionarEquipo:
+          Control: CanvasComponent
+          ComponentName: cmpHeaderSeccion
+          Properties:
+            Fill: =Color.Transparent
+            Height: =80
+            Subtitle: =LookUp(colNav, Id = "3.3").Breadcrumb
+            Title: |-
+              =If(locModoVista="Nuevo", "Nuevo Equipo", "Editar: " & locRegistroEditar.CodigoEquipo)
+            Width: =App.Width - cmpSidebar_GestionarEquipo.Width
+            X: =cmpSidebar_GestionarEquipo.Width
+            Y: =cmpHeader_GestionarEquipo.Height
+      - conMain_GestionarEquipos:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =locTema_FondoPagina
+            Height: =App.Height - Self.Y
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =5
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Width: =cmpHeaderSeccion_GestionarEquipo.Width
+            X: =cmpSidebar_GestionarEquipo.Width
+            Y: =cmpHeaderSeccion_GestionarEquipo.Height + cmpHeaderSeccion_GestionarEquipo.Y
+          Children:
+            - conTabs:
+                Control: GroupContainer@1.4.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =Color.Transparent
+                  FillPortions: =0
+                  Height: =80
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  Width: =Parent.Width
+                Children:
+                  - conTabs_Superior:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Regular
+                        Fill: =locTema_FondoPanel
+                        Height: =80
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Width: =Parent.Width
+                      Children:
+                        - btnTab_General:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(locTabActiva = "GENERAL", locTema_AccionPrimaria, locTema_TextoSecundario)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              DisplayMode: =DisplayMode.View
+                              Fill: =Color.Transparent
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =If(locTabActiva = "GENERAL", FontWeight.Bold, FontWeight.Normal)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(locTema_AccionPrimaria, 90%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: =
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Size: =13
+                              Text: ="1. General"
+                              Width: =150
+                        - btnTab_Tecnica:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(locTabActiva = "TECNICA", locTema_AccionPrimaria, locTema_TextoSecundario)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              DisplayMode: =DisplayMode.View
+                              Fill: =Color.Transparent
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =If(locTabActiva = "TECNICA", FontWeight.Bold, FontWeight.Normal)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(locTema_AccionPrimaria, 90%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: =
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Size: =13
+                              Text: ="2. Datos Técnicos"
+                              Width: =150
+                        - btnTab_Proveedores:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(locTabActiva = "PROVEEDORES", locTema_AccionPrimaria, locTema_TextoSecundario)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              DisplayMode: =DisplayMode.View
+                              Fill: =Color.Transparent
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =If(locTabActiva = "PROVEEDORES", FontWeight.Bold, FontWeight.Normal)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(locTema_AccionPrimaria, 90%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: =
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Size: =13
+                              Text: ="3. Proveedores"
+                              Width: =150
+                  - rctIndicadorTab:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        DisabledFill: =RGBA(161, 159, 157, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: =locTema_AccionPrimaria
+                        FocusedBorderThickness: =4
+                        Height: =3
+                        HoverFill: =RGBA(0, 120, 212, 1)
+                        PressedFill: =RGBA(0, 120, 212, 1)
+                        Width: =btnTab_General.Width
+                        X: =Switch(locTabActiva, "GENERAL", btnTab_General.X, "TECNICA", btnTab_Tecnica.X, "PROVEEDORES", btnTab_Proveedores.X, btnTab_General.X )
+                        Y: '=btnTab_General.Y + btnTab_General.Height '
+            - conBody_General:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  BorderColor: =Color.DimGrey
+                  Fill: =locTema_FondoPagina
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =20
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingLeft: =30
+                  PaddingRight: =30
+                  PaddingTop: =20
+                  Visible: =locTabActiva = "GENERAL"
+                Children:
+                  - conFila1_General:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Semilight
+                        FillPortions: =0
+                        Height: =100
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =40
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =0
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =Parent.Width
+                      Children:
+                        - conCampo_Tipo:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutJustifyContent: =LayoutJustifyContent.Center
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlTipo:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =35
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Tipo de Equipo" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(true, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - ddTipoEquipo:
+                                  Control: Classic/DropDown@2.3.1
+                                  Properties:
+                                    AllowEmptySelection: =true
+                                    BorderColor: =locTema_BordeInput
+                                    BorderThickness: =1
+                                    ChevronBackground: =Color.Transparent
+                                    ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+                                    ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+                                    ChevronFill: =Color.Black
+                                    ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+                                    ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                                    Color: =locTema_TextoSecundario
+                                    Default: =If(locModoVista = "Editar", LookUp(spCatalogosTiposEquipo, ID = locRegistroEditar.TipoEquipoID).Title)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    DisabledFill: =RGBA(242, 242, 241, 0)
+                                    DisplayMode: =If(locModoVista = "Nuevo", DisplayMode.Edit, DisplayMode.Disabled)
+                                    FocusedBorderThickness: =1
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HoverBorderColor: =ColorFade(Self.BorderColor, -40%)
+                                    HoverColor: =Self.Color
+                                    HoverFill: =ColorFade(Self.Fill, -10%)
+                                    Items: =Filter(spCatalogosTiposEquipo, Activo = true)
+                                    Items.Value: =Title
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnChange: |-
+                                      =// 1. Obtenemos el registro COMPLETO del tipo seleccionado
+                                      With({ 
+                                          regTipoSeleccionado: LookUp(spCatalogosTiposEquipo, ID = Self.Selected.ID) 
+                                      },
+                                          // --- PARTE A: CAMPOS PERSONALIZADOS (Igual) ---
+                                          If(!IsBlank(regTipoSeleccionado.CamposPersonalizados),
+                                              ClearCollect(colDatosTecnicos,
+                                                  ForAll(
+                                                      Table(ParseJSON(regTipoSeleccionado.CamposPersonalizados)),
+                                                      {
+                                                          ID_Campo: Text(Value.ID),
+                                                          Nombre: Text(Value.Nombre),
+                                                          Unidad: Text(Value.Unidad),
+                                                          Requerido: Boolean(Value.Requerido),
+                                                          Valor: "" 
+                                                      }
+                                                  )
+                                              ),
+                                              Clear(colDatosTecnicos)
+                                          );
+
+                                          // --- PARTE B: AUTOGENERACIÓN ---
+                                          If(locModoVista = "Nuevo",
+                                              With({
+                                                  varIDFiltro: regTipoSeleccionado.ID,
+                                                  varPrefijoReal: regTipoSeleccionado.Prefijo
+                                              },
+                                                  With({
+                                                      varUltimoRegistro: First(
+                                                          Sort(
+                                                              Filter(spEquipos, TipoEquipoID = varIDFiltro),
+                                                              CodigoNumero,        
+                                                              SortOrder.Descending
+                                                          )
+                                                      )
+                                                  },
+                                                      // 3. Calculamos y Actualizamos
+                                                      With({ varNuevoNumero: Coalesce(varUltimoRegistro.CodigoNumero, 0) + 1 },
+                                                          UpdateContext({ 
+                                                              locCodigoPreview: varPrefijoReal & "-" & Text(varNuevoNumero, "000"),
+                                                              locNumeroGenerado: varNuevoNumero,
+                                                              locPrefijoGenerado: varPrefijoReal
+                                                          })
+                                                      )
+                                                  )
+                                              )
+                                          )
+                                      );
+
+                                      // Reseteos
+                                      Reset(galDatosTecnicos);
+                                      Reset(txtCodigoEquipo);
+                                    PaddingBottom: =5
+                                    PaddingLeft: =12
+                                    PaddingRight: =5
+                                    PaddingTop: =5
+                                    PressedBorderColor: =RGBA(16, 110, 190, 1)
+                                    PressedColor: =RGBA(255, 255, 255, 1)
+                                    PressedFill: =locTema_AccionPrimaria
+                                    SelectionColor: =locTema_TextoInvertido
+                                    SelectionFill: =locTema_AccionPrimaria
+                                    Width: =Parent.Width - 2*Parent.PaddingLeft
+                        - conCampo_Codigo:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlCodigo:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Codigo del Equipo" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - txtCodigoEquipo:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Align: =Align.Center
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    BorderStyle: =BorderStyle.Solid
+                                    BorderThickness: =1
+                                    DisplayMode: =If(locModoVista = "Nuevo", DisplayMode.Edit, DisplayMode.Disabled)
+                                    FontColor: =locTema_TextoSecundario
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Mode: ='TextInputCanvas.Mode'.SingleLine
+                                    Value: =If(locModoVista = "Nuevo", locCodigoPreview, locRegistroEditar.CodigoEquipo)
+                        - conCampo_Nombre:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height + 1
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlNombre:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Nombre Descriptivo" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(true, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - txtNombreEquipo:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Align: =Align.Center
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    BorderStyle: =BorderStyle.Solid
+                                    BorderThickness: =1
+                                    FillPortions: =1
+                                    FontColor: =locTema_TextoSecundario
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Mode: ='TextInputCanvas.Mode'.SingleLine
+                                    Value: =locRegistroEditar.Title
+                  - conFila2_General:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Semilight
+                        FillPortions: =0
+                        Height: =100
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =40
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =0
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =Parent.Width
+                      Children:
+                        - conCampo_Ubicacion:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =7
+                              Width: =300
+                            Children:
+                              - htmlUbicacion:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Ubicación (Sector/Linea)" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - conSubFila_Ubicacion:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =40
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =10
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingLeft: =2
+                                  Children:
+                                    - ddUbicacion_Sector:
+                                        Control: Classic/DropDown@2.3.1
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Stretch
+                                          AllowEmptySelection: =true
+                                          BorderColor: =locTema_BordeInput
+                                          BorderThickness: =1
+                                          ChevronBackground: =Color.Transparent
+                                          ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+                                          ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+                                          ChevronFill: =Color.Black
+                                          ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+                                          ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                                          Color: =locTema_TextoSecundario
+                                          Default: |-
+                                            =If(locModoVista = "Editar",
+                                               LookUp(spUbicaciones, ID = LookUp(spUbicaciones, ID = locRegistroEditar.LineaID).PadreID).Title,
+                                               ""
+                                            )
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          FillPortions: =1
+                                          FocusedBorderThickness: =1
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =ColorFade(Self.BorderColor, -40%)
+                                          HoverColor: =Self.Color
+                                          HoverFill: =ColorFade(Self.Fill, -10%)
+                                          Items: =Filter(spUbicaciones, PadreID = 0 && Activo = true)
+                                          Items.Value: =Title
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnChange: =Reset(ddUbicacion_Linea)
+                                          PaddingBottom: =5
+                                          PaddingLeft: =12
+                                          PaddingRight: =5
+                                          PaddingTop: =5
+                                          PressedBorderColor: =RGBA(16, 110, 190, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =locTema_AccionPrimaria
+                                          SelectionColor: =locTema_TextoInvertido
+                                          SelectionFill: =locTema_AccionPrimaria
+                                    - ddUbicacion_Linea:
+                                        Control: Classic/DropDown@2.3.1
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Stretch
+                                          AllowEmptySelection: =true
+                                          BorderColor: =locTema_BordeInput
+                                          BorderThickness: =1
+                                          ChevronBackground: =Color.Transparent
+                                          ChevronDisabledBackground: =Color.Transparent
+                                          ChevronDisabledFill: =Color.Transparent
+                                          ChevronFill: =Color.Black
+                                          ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+                                          ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                                          Color: =locTema_TextoSecundario
+                                          Default: |-
+                                            =If(locModoVista = "Editar",
+                                               LookUp(spUbicaciones, ID = locRegistroEditar.LineaID).Title,
+                                               ""
+                                            )
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          DisplayMode: |-
+                                            =If(
+                                                IsBlank(ddUbicacion_Sector.Selected) || IsBlank(ddUbicacion_Sector.Selected.ID),
+                                                DisplayMode.Disabled,
+                                                DisplayMode.Edit
+                                            )
+                                          FillPortions: =1
+                                          FocusedBorderThickness: =1
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =ColorFade(Self.BorderColor, -40%)
+                                          HoverColor: =Self.Color
+                                          HoverFill: =ColorFade(Self.Fill, -10%)
+                                          Items: =Filter(spUbicaciones, PadreID = ddUbicacion_Sector.Selected.ID && Activo = true)
+                                          Items.Value: =Title
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          PaddingBottom: =5
+                                          PaddingLeft: =12
+                                          PaddingRight: =5
+                                          PaddingTop: =5
+                                          PressedBorderColor: =RGBA(16, 110, 190, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =locTema_AccionPrimaria
+                                          SelectionColor: =locTema_TextoInvertido
+                                          SelectionFill: =locTema_AccionPrimaria
+                        - conCampo_Estado:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              FillPortions: =0
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlEstado:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Estado Operativo" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - ddEstado:
+                                  Control: Classic/DropDown@2.3.1
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    AllowEmptySelection: =true
+                                    BorderColor: =locTema_BordeInput
+                                    BorderThickness: =1
+                                    ChevronBackground: =Color.Transparent
+                                    ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+                                    ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+                                    ChevronFill: =Color.Black
+                                    ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+                                    ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                                    Color: =locTema_TextoSecundario
+                                    Default: =If(locModoVista = "Editar", locRegistroEditar.EstadoOperativo, First(lstMaestro_EstadosEquipo).Value)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    DisabledFill: =RGBA(242, 242, 241, 0)
+                                    FillPortions: =1
+                                    FocusedBorderThickness: =1
+                                    Font: =Font.'Segoe UI'
+                                    HoverBorderColor: =ColorFade(Self.BorderColor, -40%)
+                                    HoverColor: =Self.Color
+                                    HoverFill: =ColorFade(Self.Fill, -10%)
+                                    Items: =lstMaestro_EstadosEquipo
+                                    Items.Value: =Value
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =5
+                                    PaddingLeft: =12
+                                    PaddingRight: =5
+                                    PaddingTop: =5
+                                    PressedBorderColor: =RGBA(16, 110, 190, 1)
+                                    PressedColor: =RGBA(255, 255, 255, 1)
+                                    PressedFill: =locTema_AccionPrimaria
+                                    SelectionColor: =locTema_TextoInvertido
+                                    SelectionFill: =locTema_AccionPrimaria
+                  - conFila3_General:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.Semilight
+                        FillPortions: =0
+                        Height: =100
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =40
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =0
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =Parent.Width
+                      Children:
+                        - conCampo_Marca:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              FillPortions: =0
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlMarca:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Marca" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                                    X: =40
+                                    Y: =40
+                              - txtMarcaEquipo:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Align: =Align.Center
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    BorderStyle: =BorderStyle.Solid
+                                    BorderThickness: =1
+                                    FillPortions: =1
+                                    FontColor: =locTema_TextoSecundario
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Mode: ='TextInputCanvas.Mode'.SingleLine
+                                    Value: =locRegistroEditar.Marca
+                        - conCampo_Modelo:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlModelo:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Modelo" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - txtModeloEquipo:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Align: =Align.Center
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    BorderStyle: =BorderStyle.Solid
+                                    BorderThickness: =1
+                                    FillPortions: =1
+                                    FontColor: =locTema_TextoSecundario
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Mode: ='TextInputCanvas.Mode'.SingleLine
+                                    Value: =locRegistroEditar.Modelo
+                        - conCampo_Serie:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.Height
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =5
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =7
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                              Width: =300
+                            Children:
+                              - htmlSerie:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    DisabledBorderColor: =RGBA(161, 159, 157, 1)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =32
+                                    HtmlText: |-
+                                      ="<div style='
+                                          width: 100%;
+                                          height: 100%;
+                                          display: flex;
+                                          align-items: center; /* Esto es lo que alinea verticalmente al centro */
+                                          margin: 0px;
+                                          padding: 0px;
+                                          font-family: ""Segoe UI"", sans-serif;
+                                          font-size: 14px;
+                                          font-weight: 600;
+                                          color: " & Substitute(JSON(Color.Black), """", "") & ";
+                                          overflow: hidden;
+                                      '>" & 
+                                          // --- 1. TEXTO DE LA ETIQUETA ---
+                                          "Nro. Serie" &   
+
+                                          // --- 2. ASTERISCO DE REQUERIDO ---
+                                          // Cambia 'true' por 'false' en los campos opcionales
+                                          If(false, 
+                                              "<span style='color: #dc2626; margin-left: 4px;'>*</span>", 
+                                              ""
+                                          ) &
+                                      "</div>"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =10
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width
+                              - txtSerieEquipo:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Align: =Align.Center
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    BorderStyle: =BorderStyle.Solid
+                                    BorderThickness: =1
+                                    FillPortions: =1
+                                    FontColor: =locTema_TextoSecundario
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Mode: ='TextInputCanvas.Mode'.SingleLine
+                                    Value: =locRegistroEditar.NumeroSerie
+            - conBody_Tecnica:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  Fill: =locTema_FondoPagina
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  Visible: =locTabActiva = "TECNICA"
+                Children:
+                  - conSplit_Tecnica:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        Height: =Parent.Height
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutJustifyContent: =LayoutJustifyContent.Center
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        Width: =Parent.Width
+                      Children:
+                        - galDatosTecnicos:
+                            Control: Gallery@2.15.0
+                            Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                            Properties:
+                              BorderColor: =RGBA(245, 245, 245, 1)
+                              FillPortions: =2
+                              Height: =Parent.Height
+                              Items: =colDatosTecnicos
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =0
+                              TemplatePadding: =20
+                              TemplateSize: =70
+                            Children:
+                              - lblCampo_Unidad:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =locTema_TextoTerciario
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =txtCampo_Valor.Height
+                                    OnSelect: =Select(Parent)
+                                    Text: =ThisItem.Unidad
+                                    Width: =Parent.TemplateWidth - Self.X
+                                    X: =txtCampo_Valor.X + txtCampo_Valor.Width + 10
+                                    Y: =txtCampo_Valor.Y
+                              - txtCampo_Valor:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Appearance: ='TextInputCanvas.Appearance'.Outline
+                                    BasePaletteColor: =locTema_AccionPrimaria
+                                    BorderColor: =locTema_BordeInput
+                                    Value: =ThisItem.Valor
+                                    Width: =Parent.Width/2
+                                    X: =20
+                                    Y: =Parent.TemplateHeight - Self.Height
+                              - htmlEtiqueta_Valor:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    AutoHeight: =true
+                                    Font: =Font.'Open Sans'
+                                    Height: =30
+                                    HtmlText: "=\"<div style='\r\n    display: flex; \r\n    align-items: center;     /* Centra verticalmente para evitar cortes */\r\n    line-height: 1.2;\r\n    overflow: hidden;        /* <--- CLAVE: Oculta la barra de scroll */\r\n    white-space: nowrap;     /* Opcional: Evita que el texto salte de línea si prefieres que se corte */\r\n    margin: 0px;             /* Elimina márgenes fantasma */\r\n    padding: 0px;            /* Elimina padding interno */\r\n    width: 98%;              /* Un poco menos del 100% para evitar scroll horizontal */\r\n    height: 100%;            /* Forza al div a respetar la altura del control */\r\n'>\" & \r\n    \r\n    \"<b><span style='color:\" & Substitute(JSON(Color.Black), \"\"\"\", \"\") & \"'>\" & \r\n    ThisItem.Nombre & \r\n    \"</span>\" & \r\n    If(ThisItem.Requerido, \r\n        \"<span style='color:\" & Substitute(JSON(Color.Red), \"\"\"\", \"\") & \"'> *</span>\", \r\n        \"\"\r\n    ) & \r\n    \"</b>\" &\r\n\r\n\"</div>\""
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Width: =Parent.Width - 2 * Parent.TemplatePadding
+                                    X: =6
+                        - conAreaAdjuntos:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                            Children:
+                              - frmAdjuntos:
+                                  Control: Form@2.4.4
+                                  Variant: Classic
+                                  Layout: Vertical
+                                  Properties:
+                                    AcceptsFocus: =
+                                    BorderColor: =RGBA(245, 245, 245, 1)
+                                    DataSource: =spEquipos
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    Item: =locRegistroEditar
+                                    LayoutMinWidth: =0
+                                    OnFailure: =Notify("Error al subir adjuntos", NotificationType.Error)
+                                    Width: =Parent.Width
+                                    X: =267
+                                    Y: =245
+                                  Children:
+                                    - Attachments_DataCard1:
+                                        Control: TypedDataCard@1.0.7
+                                        Variant: ClassicAttachmentsEdit
+                                        Properties:
+                                          BorderColor: =RGBA(245, 245, 245, 1)
+                                          DataField: ="{Attachments}"
+                                          Default: =ThisItem.Attachments
+                                          DisplayName: =DataSourceInfo([@spEquipos],DataSourceInfo.DisplayName,Attachments)
+                                          Height: =Parent.Height
+                                          Required: =false
+                                          Update: =DataCardValue1.Attachments
+                                          Width: =Parent.Width
+                                          X: =0
+                                          Y: =0
+                                        Children:
+                                          - DataCardKey1:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                AutoHeight: =true
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                BorderThickness: =2
+                                                Color: =RGBA(50, 49, 48, 1)
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                FocusedBorderThickness: =4
+                                                Font: =Font.'Segoe UI'
+                                                FontWeight: =FontWeight.Semibold
+                                                Height: =34
+                                                PaddingLeft: =0
+                                                Text: ="Adjuntos"
+                                                Width: =Parent.Width - 60
+                                                Wrap: =false
+                                                X: =30
+                                                Y: =10
+                                          - DataCardValue1:
+                                              Control: Attachments@2.3.0
+                                              MetadataKey: FieldValue
+                                              Properties:
+                                                AddAttachmentText: ="Adjuntar archivo"
+                                                BorderColor: =locTema_BordeInput
+                                                BorderStyle: =BorderStyle.Dashed
+                                                Color: =RGBA(50, 49, 48, 1)
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(161, 159, 157, 1)
+                                                DisabledFill: =RGBA(242, 242, 241, 0)
+                                                DisplayMode: =Parent.DisplayMode
+                                                Fill: =RGBA(250, 250, 250, 1)
+                                                Font: =Font.'Segoe UI'
+                                                Height: =Parent.Height / 1.5
+                                                HoverColor: =RGBA(50, 49, 48, 1)
+                                                HoverFill: =RGBA(245, 245, 245, 1)
+                                                ItemColor: =RGBA(0, 0, 0, 1)
+                                                ItemFill: =RGBA(0, 120, 212, 1)
+                                                ItemHoverColor: =RGBA(50, 49, 48, 1)
+                                                ItemHoverFill: =RGBA(245, 245, 245, 1)
+                                                ItemSpacing: =12
+                                                Items: =Parent.Default
+                                                MaxAttachmentsText: ="Numero máximo de adjuntos alcanzado."
+                                                NoAttachmentsColor: =RGBA(161, 159, 157, 1)
+                                                NoAttachmentsText: ="Arrastre archivos aquí."
+                                                PaddingBottom: =5
+                                                PaddingLeft: =If(Self.DisplayMode = DisplayMode.Edit, 5, 0)
+                                                PaddingRight: =5
+                                                PaddingTop: =5
+                                                PressedColor: =RGBA(255, 255, 255, 1)
+                                                PressedFill: =RGBA(0, 120, 212, 1)
+                                                Tooltip: =Parent.DisplayName
+                                                Width: =Parent.Width - 60
+                                                X: =30
+                                                Y: =DataCardKey1.Y + DataCardKey1.Height + 5
+                                          - ErrorMessage1:
+                                              Control: Label@2.5.1
+                                              MetadataKey: ErrorMessage
+                                              Properties:
+                                                AutoHeight: =true
+                                                BorderColor: =RGBA(0, 0, 0, 0)
+                                                BorderStyle: =BorderStyle.None
+                                                BorderThickness: =2
+                                                Color: =RGBA(168, 0, 0, 1)
+                                                DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                                DisabledColor: =RGBA(168, 0, 0, 1)
+                                                FocusedBorderThickness: =4
+                                                Font: =Font.'Segoe UI'
+                                                FontWeight: =FontWeight.Semibold
+                                                Height: =10
+                                                Live: =Live.Assertive
+                                                PaddingBottom: =0
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PaddingTop: =0
+                                                Text: =Parent.Error
+                                                Visible: =Parent.DisplayMode=DisplayMode.Edit
+                                                Width: =Parent.Width - 60
+                                                X: =30
+                                                Y: =DataCardValue1.Y + DataCardValue1.Height
+            - conBody_Proveedores:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  Fill: =locTema_FondoPagina
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =20
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =30
+                  PaddingLeft: =30
+                  PaddingRight: =30
+                  PaddingTop: =30
+                  Visible: =locTabActiva = "PROVEEDORES"
+                Children:
+                  - conBarraAdd_Proveedores:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        Fill: =locTema_FondoPanel
+                        FillPortions: =0
+                        Height: =60
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =15
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =10
+                        PaddingLeft: =10
+                        PaddingRight: =10
+                        PaddingTop: =10
+                      Children:
+                        - cbSeleccion_Proveedor:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              Appearance: ='ComboboxCanvas.Appearance'.Outline
+                              BasePaletteColor: =locTema_TextoSecundario
+                              DefaultSelectedItems: =[]
+                              Fill: =Color.White
+                              FillPortions: =1
+                              InputTextPlaceholder: ="Buscar proveedor..."
+                              Items: =Filter(spCatalogosProveedores, Activo = true)
+                              OnChange: =
+                              Width: =350
+                              X: =60
+                              Y: =45
+                            Children:
+                              - Title1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Title"
+                                    FieldName: ="Title"
+                                    FieldType: ="s"
+                                    Order: =1
+                              - Telefono1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Telefono"
+                                    FieldName: ="Telefono"
+                                    FieldType: ="s"
+                                    Order: =2
+                              - Activo1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Activo"
+                                    FieldName: ="Activo"
+                                    FieldType: ="b"
+                                    Order: =3
+                              - Direccion1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Direccion"
+                                    FieldName: ="Direccion"
+                                    FieldType: ="s"
+                                    Order: =4
+                              - Categoria1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Categoria"
+                                    FieldName: ="Categoria"
+                                    FieldType: ="s"
+                                    Order: =5
+                              - ContactoNombre1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="ContactoNombre"
+                                    FieldName: ="ContactoNombre"
+                                    FieldType: ="s"
+                                    Order: =6
+                              - Attachments1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Attachments"
+                                    FieldName: ="{Attachments}"
+                                    FieldType: ="r*"
+                                    Order: =7
+                        - cbSeleccion_Relacion:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              Appearance: ='ComboboxCanvas.Appearance'.Outline
+                              BasePaletteColor: =locTema_TextoSecundario
+                              DefaultSelectedItems: =[]
+                              Fill: =Color.White
+                              FillPortions: =1
+                              InputTextPlaceholder: ="Seleccione categorías..."
+                              Items: =lstMaestro_RolesEquipo
+                              OnChange: =
+                              SelectMultiple: =true
+                              X: =60
+                              Y: =45
+                        - btnAgregarProveedor:
+                            Control: Button@0.0.45
+                            Properties:
+                              Align: =Align.Center
+                              AlignInContainer: =AlignInContainer.Center
+                              BasePaletteColor: =RGBA(8, 222, 8, 1)
+                              DisplayMode: =If(IsBlank(cbSeleccion_Proveedor.Selected), DisplayMode.Disabled, DisplayMode.Edit)
+                              Icon: ="Add"
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              OnSelect: "=// --- COSECHA: Guardamos lo que el usuario haya modificado en la lista visual ---\n// Sirve para que sie l usuario modifico categoria de proveedor se guarde en la colecion temporal\nForAll(galProveedoresAsignados.AllItems,\n    Patch(colProveedoresAsignados, ThisRecord, {\n        TipoRelacion: Concat(cbEditar_Relacion.SelectedItems, Value, \", \")\n    })\n);\n// 1. Validaciones\nIf(\n    // A. Que haya proveedor seleccionado\n    IsBlank(cbSeleccion_Proveedor.Selected.ID),\n    Notify(\"Seleccione un proveedor.\", NotificationType.Error),\n\n    // B. Que haya al menos un rol seleccionado\n    IsEmpty(cbSeleccion_Relacion.SelectedItems),\n    Notify(\"Indique el tipo de relación (Roles).\", NotificationType.Error),\n\n    // C. Que no esté duplicado en la lista\n    !IsBlank(LookUp(colProveedoresAsignados, ProveedorID = cbSeleccion_Proveedor.Selected.ID)),\n    Notify(\"Este proveedor ya está asignado.\", NotificationType.Warning),\n\n    // 2. AGREGAR A LA COLECCIÓN\n    Collect(colProveedoresAsignados, {\n        ID: Blank(),\n        ProveedorID: cbSeleccion_Proveedor.Selected.ID,\n        NombreProveedor: cbSeleccion_Proveedor.Selected.Title, // Ojo: Asegurate que el combo muestre Title\n        \n        // --- CAMBIO CLAVE: CONCATENAR SELECCIONES ---\n        // Esto guarda: \"Fabricante, Vendedor\"\n        TipoRelacion: Concat(cbSeleccion_Relacion.SelectedItems, Value, \", \"), \n        \n        Activo: true,\n        EsNuevo: true\n    });\n\n    // 3. LIMPIEZA\n    Reset(cbSeleccion_Proveedor);\n    Reset(cbSeleccion_Relacion)\n)"
+                              Text: ="Agregar Proveedor"
+                              Visible: =galEditorCampos.Visible
+                              Width: =180
+                              X: =40
+                              Y: =40
+                  - galProveedoresAsignados:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Items: =colProveedoresAsignados
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        TemplateSize: =80
+                      Children:
+                        - rctFondoProv:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              BorderColor: =locTema_BordeInput
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =1
+                              DisabledFill: =RGBA(161, 159, 157, 1)
+                              DisplayMode: =DisplayMode.View
+                              Fill: =locTema_FondoPanel
+                              FocusedBorderThickness: =4
+                              Height: =Parent.TemplateHeight
+                              HoverFill: =locTema_FondoPanel
+                              PressedFill: =RGBA(0, 120, 212, 1)
+                              Width: =Parent.Width
+                        - lblNombre_Prov:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =locTema_TextoPrincipal
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              OnSelect: =Select(Parent)
+                              Size: =14
+                              Text: =ThisItem.NombreProveedor
+                              Width: =Parent.TemplateWidth - Self.X - 100
+                              X: =icnAvatar_Prov.X + icnAvatar_Prov.Width + 15
+                              Y: =10
+                        - icnAvatar_Prov:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              Color: =locTema_AccionPrimaria
+                              DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                              DisabledColor: =RGBA(225, 223, 221, 1)
+                              DisabledFill: =RGBA(0, 0, 0, 0)
+                              FocusedBorderThickness: =4
+                              Height: =32
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(16, 110, 190, 1)
+                              HoverFill: =RGBA(0, 0, 0, 0)
+                              Icon: =Icon.Person
+                              OnSelect: =Select(Parent)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedColor: =RGBA(16, 110, 190, 1)
+                              PressedFill: =RGBA(0, 0, 0, 0)
+                              Width: =32
+                              X: =20
+                              Y: =15
+                        - icnBorrar_Prov:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              Color: =locTema_IconoBorrar
+                              DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                              DisabledColor: =RGBA(225, 223, 221, 1)
+                              DisabledFill: =RGBA(0, 0, 0, 0)
+                              FocusedBorderThickness: =4
+                              Height: =24
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =ColorFade(locTema_IconoBorrar, -20%)
+                              HoverFill: =RGBA(0, 0, 0, 0)
+                              Icon: =Icon.Trash
+                              OnSelect: =Remove(colProveedoresAsignados, ThisItem)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedColor: =RGBA(16, 110, 190, 1)
+                              PressedFill: =RGBA(0, 0, 0, 0)
+                              Tooltip: ="Quitar Proveedor"
+                              Width: =24
+                              X: =Parent.TemplateWidth - 50
+                              Y: =(Parent.TemplateHeight - 10 - Self.Height) / 2
+                        - cbEditar_Relacion:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              Appearance: ='ComboboxCanvas.Appearance'.Outline
+                              BasePaletteColor: =locColorGris600
+                              DefaultSelectedItems: |-
+                                =ForAll(
+                                    Split(ThisItem.TipoRelacion, ","), 
+                                    { Value: Trim(Value) }
+                                )
+                              InputTextPlaceholder: ="Seleccione roles..."
+                              Items: =lstMaestro_RolesEquipo
+                              OnChange: =
+                              SelectMultiple: =true
+                              X: =60
+                              Y: =45
+            - conFooter_GestionarEquipo:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  Fill: =locTema_FondoPagina
+                  FillPortions: =0
+                  Height: =70
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutJustifyContent: =LayoutJustifyContent.End
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                Children:
+                  - btnFooter_Cancelar:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Subtle
+                        BasePaletteColor: =locTema_TextoSecundario
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: |-
+                          =// Si entré en modo Nuevo, y ya se generó un ID (le di siguiente), y es un borrador...
+                          If(locModoVista = "Nuevo" && !IsBlank(locRegistroEditar.ID) && locRegistroEditar.EsBorrador,
+                              // ...lo elimino físicamente (Rollback)
+                              Remove(spEquipos, locRegistroEditar);
+                              Notify("Carga cancelada. Borrador eliminado.", NotificationType.Information)
+                          );
+
+                          // Limpieza estándar
+                          Clear(colDatosTecnicos);
+                          Clear(colProveedoresAsignados);
+                          Set(varEnProcesoDeCarga, false);
+                          Back()
+                        Text: ="Cancelar"
+                  - btnFooter_Atras:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =locTema_TextoSecundario
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: "=Switch(locTabActiva,\r\n    // ESTOY EN GENERAL -> VUELVO A LISTA DE EQUIPOS\r\n    \"GENERAL\",\r\n    With({},\r\n        // A. Si es un borrador nuevo abandonado -> ROLLBACK\r\n        If(locModoVista = \"Nuevo\" && !IsBlank(locRegistroEditar.ID) && locRegistroEditar.EsBorrador,\r\n            Remove(spEquipos, locRegistroEditar);\r\n            Notify(\"Borrador eliminado.\", NotificationType.Information)\r\n        );\r\n\r\n        // B. Limpieza y Salida\r\n        Clear(colDatosTecnicos);\r\n        Clear(colProveedoresAsignados);\r\n        Back()\r\n    ),\r\n    \r\n    // ESTOY EN TÉCNICA -> VOY A GENERAL\r\n    \"TECNICA\", \r\n    // 1. Antes de irme, guardo lo que escribí en los inputs técnicos\r\n    With({},\r\n        ClearCollect(colDatosTecnicos,\r\n            ForAll(galDatosTecnicos.AllItems,\r\n                Patch(ThisRecord, { Valor: txtCampo_Valor.Value }) \r\n            )\r\n        );\r\n        // 2. Ahora sí, vuelvo\r\n        UpdateContext({locTabActiva: \"GENERAL\"})\r\n    ),\r\n\r\n    // ESTOY EN PROVEEDORES -> VOY A TÉCNICA\r\n    \"PROVEEDORES\", \r\n    // 1. Antes de irme, guardo los cambios de roles en la galería\r\n    With({},\r\n        ForAll(galProveedoresAsignados.AllItems,\r\n            Patch(colProveedoresAsignados, ThisRecord, {\r\n                TipoRelacion: Concat(cbEditar_Relacion.SelectedItems, Value, \", \")\r\n            })\r\n        );\r\n        // 2. Vuelvo\r\n        UpdateContext({locTabActiva: \"TECNICA\"})\r\n    )\r\n)"
+                        Text: ="Atrás"
+                  - btnFooter_Siguiente_GENERAL:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =locTema_AccionPrimaria
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: "=// 1. Validaciones Básicas de UI\r\nIf(\r\n    IsBlank(txtNombreEquipo.Value) || IsBlank(ddTipoEquipo.Selected.ID),\r\n    Notify(\"Por favor, complete Nombre y Tipo.\", NotificationType.Error),\r\n\r\n    // 2. Preparación de Datos (Calculamos variables auxiliares una sola vez)\r\n    With({\r\n        _ubicacionSeleccionada: LookUp(spUbicaciones, ID = ddUbicacion_Linea.Selected.ID),\r\n        // Si no tiene ID aún, usamos Defaults (Crear). Si ya tiene (porque guardó antes), usamos el registro (Editar).\r\n        _registroBase: If(IsBlank(locRegistroEditar.ID), Defaults(spEquipos), locRegistroEditar)\r\n    },\r\n    With({\r\n        _sectorCalculado: If(IsBlank(_ubicacionSeleccionada), 0, If(_ubicacionSeleccionada.PadreID=0, _ubicacionSeleccionada.ID, _ubicacionSeleccionada.PadreID))\r\n    },\r\n        // 3. BLOQUE DE INTENTO Y ERROR (Anti-Duplicados)\r\n        IfError(\r\n            // --- INTENTO A: Guardar con el número que vemos en pantalla ---\r\n            UpdateContext({ locRegistroEditar: \r\n                Patch(spEquipos, _registroBase,\r\n                    {\r\n                        Title: txtNombreEquipo.Value,\r\n                        CodigoEquipo: txtCodigoEquipo.Value, // Código visual actual\r\n                        \r\n                        // Si es Nuevo guardamos generados, si es Edición mantenemos los viejos\r\n                        CodigoPrefijo: If(locModoVista = \"Nuevo\", locPrefijoGenerado, locRegistroEditar.CodigoPrefijo),\r\n                        CodigoNumero:  If(locModoVista = \"Nuevo\", locNumeroGenerado, locRegistroEditar.CodigoNumero),\r\n\r\n                        SectorID: _sectorCalculado,\r\n                        LineaID: ddUbicacion_Linea.Selected.ID, \r\n                        EstadoOperativo: ddEstado.Selected.Value,\r\n                        TipoEquipoID: ddTipoEquipo.Selected.ID,\r\n                        Marca: txtMarcaEquipo.Value,\r\n                        Modelo: txtModeloEquipo.Value,\r\n                        NumeroSerie: txtSerieEquipo.Value,\r\n                        \r\n                        // Forzamos borrador si es nuevo\r\n                        EsBorrador: If(locModoVista = \"Nuevo\", true, locRegistroEditar.EsBorrador)\r\n                    }\r\n                )\r\n            }),\r\n\r\n            // --- INTENTO B: SI FALLA (Conflicto de duplicados) ---\r\n            If(locModoVista = \"Nuevo\", // Solo tiene sentido reintentar si estamos creando\r\n                \r\n                // 1. Recalculamos el ÚLTIMO real (consultando la DB fresca)\r\n                With({\r\n                    _ultimoReal: First(\r\n                        Sort(\r\n                            Filter(spEquipos, TipoEquipoID = ddTipoEquipo.Selected.ID),\r\n                            CodigoNumero,        \r\n                            SortOrder.Descending\r\n                        )\r\n                    )\r\n                },\r\n                With({ _nuevoNumeroRetry: Coalesce(_ultimoReal.CodigoNumero, 0) + 1 },\r\n                    \r\n                    // 2. Reintentamos el Patch con el NUEVO número (+1 del que nos ganó)\r\n                    UpdateContext({ locRegistroEditar: \r\n                        Patch(spEquipos, Defaults(spEquipos), // Forzamos creación\r\n                            {\r\n                                Title: txtNombreEquipo.Value,\r\n                                // Generamos el nuevo código visual concatenado al vuelo\r\n                                CodigoEquipo: locPrefijoGenerado & \"-\" & Text(_nuevoNumeroRetry, \"000\"),\r\n                                \r\n                                CodigoPrefijo: locPrefijoGenerado,\r\n                                CodigoNumero:  _nuevoNumeroRetry, // <--- EL NUEVO NÚMERO\r\n\r\n                                SectorID: _sectorCalculado,\r\n                                LineaID: ddUbicacion_Linea.Selected.ID, \r\n                                EstadoOperativo: ddEstado.Selected.Value,\r\n                                TipoEquipoID: ddTipoEquipo.Selected.ID,\r\n                                Marca: txtMarcaEquipo.Value,\r\n                                Modelo: txtModeloEquipo.Value,\r\n                                NumeroSerie: txtSerieEquipo.Value,\r\n                                EsBorrador: true\r\n                            }\r\n                        )\r\n                    });\r\n                    \r\n                    // 3. Feedback: Actualizamos variables locales para que el usuario vea el cambio\r\n                    UpdateContext({ \r\n                        locNumeroGenerado: _nuevoNumeroRetry,\r\n                        locCodigoPreview: locPrefijoGenerado & \"-\" & Text(_nuevoNumeroRetry, \"000\")\r\n                    });\r\n                    Notify(\"Código actualizado automáticamente por conflicto (\" & locCodigoPreview & \").\", NotificationType.Warning)\r\n                )),\r\n                \r\n                // Si falló y no era \"Nuevo\" (o falló 2 veces), lanzamos el error real\r\n                Error(First(AllErrors))\r\n            )\r\n        );\r\n\r\n        // 4. TRANSICIÓN EXIGIDA\r\n        // Si llegamos aquí, ya tenemos un ID válido en locRegistroEditar (del intento A o del B)\r\n        Set(varEnProcesoDeCarga, true); \r\n        UpdateContext({ locTabActiva: \"TECNICA\" })\r\n    ))\r\n);"
+                        Text: ="Siguiente"
+                        Visible: =locTabActiva = "GENERAL"
+                        Width: =170
+                  - btnFooter_Siguiente_TECNICA:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =locTema_AccionPrimaria
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: |-
+                          =// 1. COSECHA: Inputs a Colección
+                          ClearCollect(colDatosTecnicos,
+                              ForAll(galDatosTecnicos.AllItems, Patch(ThisRecord, { Valor: txtCampo_Valor.Value }))
+                          );
+
+                          // 2. VALIDACIÓN TÉCNICA
+                          With({ _camposPendientes: Filter(colDatosTecnicos, Requerido = true && IsBlank(Valor)) },
+                              If(CountRows(_camposPendientes) > 0,
+                                  Notify("Faltan campos obligatorios: " & Concat(FirstN(_camposPendientes, 3), Nombre, ", ") & "...", NotificationType.Error),
+
+                                  // 3. SI TODO OK: ACTUALIZAMOS EL BORRADOR
+                                  Patch(spEquipos, locRegistroEditar, 
+                                      {
+                                          // Construcción del JSON
+                                          DatosTecnicosValores: JSON(
+                                              Ungroup(
+                                                  Table(
+                                                      { _data: ForAll(colDatosTecnicos, { ID_Campo: ID_Campo, CodigoEquipo: Nombre, Unidad: Unidad, Valor: Valor, Requerido: Requerido }) },
+                                                      { _data: Filter(Table(ParseJSON(Coalesce(locRegistroEditar.DatosTecnicosValores, "[]"))), !(Text(Value.ID_Campo) in colDatosTecnicos.ID_Campo)) } // Lógica Legacy simplificada
+                                                  ),
+                                                  _data
+                                              ),
+                                              JSONFormat.IndentFour
+                                          )
+                                      }
+                                  );
+
+                                  // 4. SUBIMOS ADJUNTOS
+                                  SubmitForm(frmAdjuntos);
+
+                                  // 5. Avanzamos
+                                  UpdateContext({locTabActiva: "PROVEEDORES"})
+                              )
+                          );
+                        Text: ="Siguiente"
+                        Visible: =locTabActiva = "TECNICA"
+                        Width: =170
+                  - btnFooter_Finalizar_PROVEEDORES:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =locTema_AccionPrimaria
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        OnSelect: "=// 1. Guardar Relaciones (Igual que siempre)\r\nForAll(galProveedoresAsignados.AllItems,\r\n    Patch(colProveedoresAsignados, ThisRecord, { TipoRelacion: Concat(cbEditar_Relacion.SelectedItems, Value, \", \") })\r\n);\r\nForAll(colProveedoresAsignados As _prov,\r\n    Patch(spEquiposProveedores, \r\n        If(IsBlank(_prov.ID), Defaults(spEquiposProveedores), LookUp(spEquiposProveedores, ID = _prov.ID)), \r\n        { EquipoID: locRegistroEditar.ID, ProveedorID: _prov.ProveedorID, TipoRelacion: _prov.TipoRelacion, Activo: true }\r\n    )\r\n);\r\n\r\n// 2. ASIGNACIÓN DE NUMERACIÓN FINAL (Solo si es Nuevo/Borrador)\r\nIf(locModoVista = \"Nuevo\", // Opcional: && locRegistroEditar.CodigoNumero = 0\r\n    \r\n    // --- LÓGICA ROBUSTA DE ASIGNACIÓN ---\r\n    IfError(\r\n    // --- INTENTO A: Calcular y Asignar ---\r\n    With({\r\n        _ultimoFirme: First(\r\n            Sort(\r\n                Filter(spEquipos, TipoEquipoID = ddTipoEquipo.Selected.ID && !EsBorrador), \r\n                CodigoNumero,        \r\n                SortOrder.Descending\r\n            )\r\n        )\r\n    },\r\n    With({ _nuevoNumero: Coalesce(_ultimoFirme.CodigoNumero, 0) + 1 },\r\n        Patch(spEquipos, locRegistroEditar, {\r\n            EsBorrador: false, \r\n            CodigoNumero: _nuevoNumero,\r\n            CodigoEquipo: locPrefijoGenerado & \"-\" & Text(_nuevoNumero, \"000\") \r\n        })\r\n    )),\r\n\r\n    // --- INTENTO B: SI FALLA (Conflictos) ---\r\n    With({\r\n        _ultimoFirmeRetry: First(Sort(Filter(spEquipos, TipoEquipoID = ddTipoEquipo.Selected.ID || !EsBorrador), CodigoNumero, SortOrder.Descending))\r\n    },\r\n    With({ _nuevoNumeroRetry: Coalesce(_ultimoFirmeRetry.CodigoNumero, 0) + 1 },\r\n        // 1. Ejecutamos el Patch de corrección\r\n        Patch(spEquipos, locRegistroEditar, {\r\n            EsBorrador: false,\r\n            CodigoNumero: _nuevoNumeroRetry,\r\n            CodigoEquipo: locPrefijoGenerado & \"-\" & Text(_nuevoNumeroRetry, \"000\")\r\n        });\r\n        \r\n        // 2. Notificamos al usuario\r\n        Notify(\"Número reasignado por concurrencia (\" & locPrefijoGenerado & \"-\" & Text(_nuevoNumeroRetry, \"000\") & \")\", NotificationType.Information);\r\n        \r\n        // 3. [CORRECCIÓN] Devolvemos un Registro para satisfacer al IfError\r\n        locRegistroEditar \r\n    ))\r\n)\r\n    ),\r\n    \r\n    // SI NO ES NUEVO (Solo editamos):\r\n    Patch(spEquipos, locRegistroEditar, { EsBorrador: false })\r\n);\r\n\r\n// 3. LIMPIEZA Y SALIDA\r\nSet(varEnProcesoDeCarga, false);\r\nResetForm(frmAdjuntos);\r\n\r\nIf(locModoVista = \"Nuevo\",\r\n    Notify(\"Equipo finalizado correctamente.\", NotificationType.Success),\r\n    Notify(\"Equipo modificado correctamente.\", NotificationType.Success)\r\n);\r\nBack();"
+                        Text: =If(locModoVista = "Nuevo", "Finalizar Carga", "Finalizar Edición")
+                        Visible: =locTabActiva = "PROVEEDORES"
+                        Width: =170

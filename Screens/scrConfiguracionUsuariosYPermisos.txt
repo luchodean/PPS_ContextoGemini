@@ -1,0 +1,1268 @@
+Screens:
+  scrConfiguracionUsuariosYPermisos:
+    Properties:
+      Fill: =locTema_FondoPagina
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: |-
+        =Set(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);
+
+        UpdateContext({ 
+            locVistaActual: "USUARIOS",  // Valores: "USUARIOS" | "ROLES"
+            locMostrarInactivos: false,
+            locModoFormulario: "Nuevo",
+            locMostrarFormulario: false,
+            locRegistroSeleccionado: Blank()
+        });
+        Reset(txtBuscador_Usuarios);
+        Reset(tglInactivos_Usuarios);
+    Children:
+      - cmpHeader_Usuarios:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Fill: =RGBA(42, 47, 56, 1)
+            Height: =70
+            LongitudHorizontal: =700
+            TriggerReset: =true
+            Width: =Parent.Width
+      - cmpSidebar_Usuarios:
+          Control: CanvasComponent
+          ComponentName: cmpSidebar
+          Properties:
+            Fill: =Color.Transparent
+            Height: =App.Height - cmpHeader_Usuarios.Height
+            Navegacion: =
+            Width: =If(varMenuCompacto, 80, 265)
+            Y: =cmpHeader_Usuarios.Height
+      - cmpHeaderSeccion_Usuarios:
+          Control: CanvasComponent
+          ComponentName: cmpHeaderSeccion
+          Properties:
+            Fill: =Color.Transparent
+            Height: =80
+            Subtitle: =LookUp(colNav, Id = varActiveId).Breadcrumb
+            Title: =LookUp(colNav, Id = varActiveId).PageTitle
+            Width: =App.Width - cmpSidebar_Usuarios.Width
+            X: =cmpSidebar_Usuarios.Width
+            Y: =cmpHeader_Usuarios.Height
+      - conMain_Usuarios:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height - Self.Y
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =5
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Width: =cmpHeaderSeccion_1.Width
+            X: =cmpHeaderSeccion_1.X
+            Y: =150
+          Children:
+            - conBarraSuperior_Usuarios:
+                Control: GroupContainer@1.4.0
+                Variant: ManualLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  Fill: =locColorGris100
+                  FillPortions: =0
+                  Height: =80
+                  LayoutMaxHeight: =80
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =16
+                  Width: =Parent.Width
+                  X: =Parent.X
+                Children:
+                  - txtBuscador_Usuarios:
+                      Control: TextInput@0.0.54
+                      Properties:
+                        BorderColor: =RGBA(200, 200, 200, 1)
+                        BorderRadius: =5
+                        BorderThickness: =1
+                        Fill: =Color.White
+                        Height: =40
+                        Placeholder: |-
+                          =If(
+                              locVistaActual = "USUARIOS",
+                              "Buscar por nombre...",
+                              "Buscar rol..."
+                          )
+                        Width: =300
+                        X: =320
+                        Y: =(Parent.Height - Self.Height) / 2
+                  - btnNuevo_Usuarios:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        Color: =RGBA(255, 255, 255, 1)
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        DisabledFill: =RGBA(242, 242, 241, 0)
+                        Fill: =Color.Green
+                        Font: =Font.'Segoe UI'
+                        HoverBorderColor: =RGBA(0, 0, 0, 0)
+                        HoverColor: '=Color.White '
+                        HoverFill: =ColorFade(Self.Fill, -20%)
+                        OnSelect: |-
+                          =UpdateContext({ locModoFormulario: "Nuevo" });
+                          UpdateContext({ locRegistroSeleccionado: Blank() });
+                          UpdateContext({ locMostrarFormulario: true })
+                        PaddingBottom: =8
+                        PressedBorderColor: =RGBA(0, 69, 120, 1)
+                        PressedColor: =RGBA(255, 255, 255, 1)
+                        PressedFill: =RGBA(16, 110, 190, 1)
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Text: ="+ Nuevo Usuario"
+                        Visible: =locVistaActual = "USUARIOS"
+                        Width: =180
+                        X: =Parent.Width - Self.Width - 20
+                        Y: =txtBuscador_Usuarios.Y
+                  - tglInactivos_Usuarios:
+                      Control: Toggle@1.1.5
+                      Properties:
+                        BasePaletteColor: =locTema_AccionPrimaria
+                        Label: ="Mostrar Inactivos"
+                        OnCheck: |-
+                          =UpdateContext({ locMostrarInactivos: true })
+                        OnUncheck: |-
+                          =UpdateContext({ locMostrarInactivos: false })
+                        Visible: =locVistaActual = "USUARIOS"
+                        Width: =190
+                        X: =btnNuevo_Usuarios.X - Self.Width - 20
+                        Y: =txtBuscador_Usuarios.Y
+                  - conTabs_Capsula:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        Fill: =locTema_TablaFondoHeader
+                        Height: =40
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        RadiusBottomLeft: =20
+                        RadiusBottomRight: =20
+                        RadiusTopLeft: =20
+                        RadiusTopRight: =20
+                        Width: =300
+                        Y: =Parent.Height / 2 - Self.Height / 2
+                      Children:
+                        - btnTab_Usuarios:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(locVistaActual = "USUARIOS", locTema_TextoInvertido, locTema_TextoPrincipal)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =If(locVistaActual = "USUARIOS", locTema_AccionPrimaria, Color.Transparent)
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =If(locVistaActual = "USUARIOS", FontWeight.Semibold, FontWeight.Normal)
+                              Height: =32
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =If(locVistaActual = "USUARIOS", locTema_AccionPrimaria, ColorFade(locTema_AccionPrimaria, 90%))
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({ locVistaActual: "USUARIOS" });
+                                Reset(txtBuscador_Usuarios)
+                              PaddingBottom: =8
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: |-
+                                =If(
+                                    locVistaActual = "USUARIOS", 
+                                    ColorFade(locTema_AccionPrimaria, -20%), // Naranja más oscuro (Tu idea)
+                                    RGBA(0, 0, 0, 0.1)                       // Gris suave al presionar el inactivo
+                                )
+                              RadiusBottomLeft: =16
+                              RadiusBottomRight: =16
+                              RadiusTopLeft: =16
+                              RadiusTopRight: =16
+                              Text: ="Usuarios"
+                              Width: =146
+                              X: =4
+                              Y: =4
+                        - btnTab_Usuarios_1:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(locVistaActual = "ROLES", locTema_TextoInvertido, locTema_TextoPrincipal)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =If(locVistaActual = "ROLES", locTema_AccionPrimaria, Color.Transparent)
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =If(locVistaActual = "ROLES", FontWeight.Semibold, FontWeight.Normal)
+                              Height: =32
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =If(locVistaActual = "ROLES", locTema_AccionPrimaria, ColorFade(locTema_AccionPrimaria, 90%))
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({ locVistaActual: "ROLES" });
+                                Reset(txtBuscador_Usuarios)
+                              PaddingBottom: =8
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: |-
+                                =If(
+                                    locVistaActual = "ROLES", 
+                                    ColorFade(locTema_AccionPrimaria, -20%), 
+                                    RGBA(0, 0, 0, 0.1)
+                                )
+                              RadiusBottomLeft: =16
+                              RadiusBottomRight: =16
+                              RadiusTopLeft: =16
+                              RadiusTopRight: =16
+                              Text: ="Roles"
+                              Width: =146
+                              X: =4
+                              Y: =4
+            - conEncabezados_Usuarios:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  Fill: =locColorGris100
+                  FillPortions: =0
+                  Height: =50
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =5
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingLeft: =8
+                  PaddingRight: =10
+                  Width: =Parent.Width
+                  X: =40
+                  Y: =40
+                Children:
+                  - lblEncabezado1_Usuarios:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinWidth: =100
+                        Text: =If(locVistaActual = "USUARIOS", "NOMBRE", "ROL")
+                        Width: =250
+                        X: =20
+                  - lblEncabezado2_Usuarios:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FillPortions: =1
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: =If(locVistaActual = "USUARIOS", "EMAIL", "DESCRIPCIÓN")
+                        Width: =500
+                        X: =lblEncabezado1_Usuarios.X + lblEncabezado1_Usuarios.Width
+                  - lblEncabezado3_Usuarios:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: ="ROL"
+                        Visible: =locVistaActual = "USUARIOS"
+                        Width: =200
+                        X: =lblEncabezado2_Usuarios.X + lblEncabezado2_Usuarios.Width
+                  - lblAcciones_Usuarios:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris700
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: ="ACCIÓN"
+                        Width: =180
+                        X: =lblEncabezado2_Usuarios.X + lblEncabezado2_Usuarios.Width
+            - conCuerpoTabla_Usuarios:
+                Control: GroupContainer@1.4.0
+                Variant: ManualLayout
+                Properties:
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                Children:
+                  - galRoles:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Height: =Parent.Height
+                        Items: |-
+                          =Filter(
+                              spRolesDefinicion,
+                              (
+                                  IsBlank(txtBuscador_Usuarios.Value) || 
+                                  StartsWith(Title, txtBuscador_Usuarios.Value)
+                              )
+                          )
+                        TemplateSize: =50
+                        Visible: =locVistaActual = "ROLES"
+                        Width: =Parent.Width
+                      Children:
+                        - conFila_Roles:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              Height: =Parent.TemplateHeight
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =5
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - lblCampoNombre_Roles:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: =ThisItem.Title
+                                    Width: =lblEncabezado1_Usuarios.Width
+                                    X: =20
+                              - lblCampoDescripcion_Roles:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblEncabezado2_Usuarios.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    Text: =ThisItem.Descripcion
+                              - conAccionTabla_Roles:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.SetByContainer
+                                    BorderStyle: =BorderStyle.None
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutJustifyContent: =LayoutJustifyContent.Center
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Width: =lblCampo6.Width
+                                    X: =lblCampo6.X
+                                  Children:
+                                    - IconEdit_Roles:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locColorGris500
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          DisplayMode: =If(ThisItem.Title = "Administrador", DisplayMode.Disabled, DisplayMode.Edit)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locColorPrimario
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Edit
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: "=// 1. Seleccionamos el rol y activamos modo \"Permisos\"\nUpdateContext({ \n    locRegistroSeleccionado: ThisItem, \n    locModoFormulario: \"Permisos\",\n    locMostrarFormulario: true \n});\n\n// 2. Parseamos el JSON actual para leer los valores (True/False)\nUpdateContext({ locJSONActual: ParseJSON(ThisItem.PermisosJSON) });\n\n// 3. Construimos la colección para la Galería del Editor (Overlay)\nClearCollect(\n    colPermisosEditor,\n    \n    // --- GRUPO: ACTIVOS (PLANTA Y EQUIPOS) ---\n    { Key: \"Activos_Ver\",    Modulo: \"Activos\", Titulo: \"Ver Planta y Equipos\",   Desc: \"Ver estructura, ubicaciones y fichas.\", Valor: Boolean(locJSONActual.Activos_Ver) },\n    { Key: \"Activos_Editar\", Modulo: \"Activos\", Titulo: \"Administrar Activos\",    Desc: \"Crear, editar o borrar equipos.\",       Valor: Boolean(locJSONActual.Activos_Editar) },\n\n    // --- GRUPO: PLANES DE MANTENIMIENTO ---\n    { Key: \"Planes_Ver\",     Modulo: \"Planes\",  Titulo: \"Ver Planes\",             Desc: \"Leer instructivos y frecuencias.\",      Valor: Boolean(locJSONActual.Planes_Ver) },\n    { Key: \"Planes_Gestor\",  Modulo: \"Planes\",  Titulo: \"Gestión de Planes\",      Desc: \"Crear o modificar planes maestros.\",    Valor: Boolean(locJSONActual.Planes_Gestor) },\n\n    // --- GRUPO: ÓRDENES DE TRABAJO (CRÍTICO) ---\n    { Key: \"OT_VerTodas\",    Modulo: \"OTs\",     Titulo: \"Ver Todas las OTs\",      Desc: \"Ve historial completo.\",                Valor: Boolean(locJSONActual.OT_VerTodas) },\n    { Key: \"OT_Crear\",       Modulo: \"OTs\",     Titulo: \"Generar OTs\",            Desc: \"Crear nuevas órdenes.\",                 Valor: Boolean(locJSONActual.OT_Crear) },\n    { Key: \"OT_Asignar\",     Modulo: \"OTs\",     Titulo: \"Asignar Técnicos\",       Desc: \"Cambiar responsable.\",                  Valor: Boolean(locJSONActual.OT_Asignar) },\n    { Key: \"OT_Ejecutar\",    Modulo: \"OTs\",     Titulo: \"Ejecutar (Técnico)\",     Desc: \"Checklist, horas e inicio tarea.\",      Valor: Boolean(locJSONActual.OT_Ejecutar) },\n    { Key: \"OT_Completar\",   Modulo: \"OTs\",     Titulo: \"Marcar Completada\",      Desc: \"Finalizar trabajo físico.\",             Valor: Boolean(locJSONActual.OT_Completar) },\n    { Key: \"OT_Aprobar\",     Modulo: \"OTs\",     Titulo: \"Aprobar y Cerrar\",       Desc: \"Validación final.\",                     Valor: Boolean(locJSONActual.OT_Aprobar) },\n\n    // --- GRUPO: CONFIGURACIÓN ---\n    { Key: \"Inc_Crear\",      Modulo: \"Incid.\",  Titulo: \"Reportar Incidencia\",    Desc: \"Botón de aviso de avería.\",             Valor: Boolean(locJSONActual.Inc_Crear) },\n    { Key: \"Inc_Gestionar\",  Modulo: \"Incid.\",  Titulo: \"Gestionar Incidencias\",  Desc: \"Cambiar prioridad y estado.\",           Valor: Boolean(locJSONActual.Inc_Gestionar) },\n    \n    { Key: \"Cfg_Global\",     Modulo: \"Config\",  Titulo: \"Admin Total\",            Desc: \"Usuarios y Roles.\",                     Valor: Boolean(locJSONActual.Cfg_Global) },\n    { Key: \"Cfg_Catalogos\",  Modulo: \"Config\",  Titulo: \"Editar Catálogos\",       Desc: \"Proveedores, Fabricantes, etc.\",        Valor: Boolean(locJSONActual.Cfg_Catalogos) }\n);"
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(16, 110, 190, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: ="Editar registro"
+                                          Width: =40
+                                          X: =199
+                  - galUsuarios:
+                      Control: Gallery@2.15.0
+                      Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                      Properties:
+                        BorderColor: =RGBA(245, 245, 245, 1)
+                        Height: =Parent.Height
+                        Items: |-
+                          =Filter(
+                              spUsuarios,
+                              // 1. Filtro de Activos
+                              (Activo = true || tglInactivos_Usuarios.Checked) &&
+                              // 2. Filtro de Búsqueda (Nombre O Email)
+                              (
+                                  IsBlank(txtBuscador_Usuarios.Value) || 
+                                  StartsWith(Title, txtBuscador_Usuarios.Value)
+                              )
+                          )
+                        TemplateSize: =50
+                        Visible: =locVistaActual = "USUARIOS"
+                        Width: =Parent.Width
+                      Children:
+                        - conFila_Usuarios:
+                            Control: GroupContainer@1.4.0
+                            Variant: AutoLayout
+                            Properties:
+                              Height: =Parent.TemplateHeight
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =5
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - lblCampoNombre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: =ThisItem.Title
+                                    Width: =lblEncabezado1_Usuarios.Width
+                                    X: =20
+                              - lblCampoEmail:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =lblEncabezado2_Usuarios.FillPortions
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    Text: =ThisItem.Email
+                              - lblCampoRol:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FillPortions: =
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    LayoutMinHeight: =16
+                                    Text: =ThisItem.Rol
+                                    Width: =200
+                              - conAccionTabla_Usuarios:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.SetByContainer
+                                    BorderStyle: =BorderStyle.None
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =Parent.Height
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutJustifyContent: =LayoutJustifyContent.Center
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Width: =lblCampo6.Width
+                                    X: =lblCampo6.X
+                                  Children:
+                                    - IconEdit_Usuarios:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locColorGris500
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          DisplayMode: =If(ThisItem.Activo, DisplayMode.Edit, DisplayMode.Disabled)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locColorPrimario
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Edit
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =UpdateContext({ 
+                                                locRegistroSeleccionado: ThisItem, 
+                                                locModoFormulario: "Editar",
+                                                locMostrarFormulario: true,
+                                                locMostrarConfirmacion: false
+                                            })
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =RGBA(16, 110, 190, 1)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: ="Editar registro"
+                                          Width: =40
+                                          X: =199
+                                    - IconDelete_Usuarios:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: |-
+                                            =If(ThisItem.Activo, locColorPeligro, locColorExito) 
+                                            // Usa tus variables globales: Rojo para borrar, Verde para restaurar
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          FocusedBorderThickness: =4
+                                          Height: =34
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =ColorFade(Self.Color, -20%)
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =If(ThisItem.Activo, Icon.Trash, Icon.Reload)
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =If(
+                                                ThisItem.Activo,
+                                                // CASO 1: ESTÁ ACTIVO -> Abrimos confirmación de borrado
+                                                UpdateContext({ 
+                                                    locRegistroSeleccionado: ThisItem, 
+                                                    locMostrarConfirmacion: true, 
+                                                    locMostrarOverlay: true 
+                                                }),
+
+                                                // CASO 2: ESTÁ INACTIVO -> Restauración inmediata
+                                                Patch(spUsuarios, ThisItem, {Activo: true});
+                                                Notify("Usuario restaurado exitosamente", NotificationType.Success)
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =3
+                                          PaddingRight: =3
+                                          PaddingTop: =3
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =ColorFade(Self.Color, -40%)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Tooltip: =If(ThisItem.Activo, "Eliminar registro", "Restaurar registro")
+                                          Width: =40
+                                          Y: =Parent.Height / 2 - Self.Height / 2
+      - conOverlayTotal_Usuarios:
+          Control: GroupContainer@1.4.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =locTema_FondoOverlay
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            PaddingBottom: =8
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =8
+            Visible: |
+              =locMostrarFormulario || locMostrarConfirmacion
+            Width: =Parent.Width
+          Children:
+            - conTarjetaFormulario_Usuarios:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  BorderColor: =Color.Transparent
+                  DropShadow: =DropShadow.ExtraBold
+                  Fill: =Color.White
+                  FillPortions: =0
+                  Height: =700
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =0
+                  PaddingBottom: =20
+                  PaddingLeft: =30
+                  PaddingRight: =30
+                  PaddingTop: =30
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Visible: =locMostrarFormulario
+                  Width: =400
+                Children:
+                  - lblTituloFormulario_Usuarios:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =locColorGris900
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =50
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingTop: =10
+                        Size: =16
+                        Text: |-
+                          =If(locVistaActual = "USUARIOS", 
+                             If(locModoFormulario="Nuevo", "Nuevo Usuario", "Editar Usuario"),
+                             "Configurar Permisos: " & locRegistroSeleccionado.Title
+                          )
+                        Width: =Parent.Width
+                  - conCuerpoFormulario_Usuarios:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        BorderStyle: =BorderStyle.None
+                        Fill: =Color.Transparent
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =15
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =20
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        PaddingTop: =20
+                        Visible: =locVistaActual = "USUARIOS"
+                      Children:
+                        - lblNombre_Usuarios:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Nombre Completo"
+                        - txtNombre_Usuarios:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Align: =Align.Center
+                              BorderRadius: =8
+                              Height: =40
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Placeholder: |-
+                                ="Ej: Juan Perez"
+                              Value: =locRegistroSeleccionado.Title
+                        - lblEmail_Usuarios:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Correo electrónico"
+                        - txtEmail_Usuarios:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Align: =Align.Center
+                              BorderRadius: =8
+                              Height: =40
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Mode: ="Email"
+                              Placeholder: ="usuario@empresa.com"
+                              Value: =locRegistroSeleccionado.Email
+                        - lblRol_Usuarios:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Rol"
+                        - ddRol_Usuarios:
+                            Control: Classic/DropDown@2.3.1
+                            Properties:
+                              AllowEmptySelection: =true
+                              BorderColor: =RGBA(210, 210, 210, 1)
+                              BorderThickness: =1
+                              ChevronBackground: =RGBA(245, 245, 245, 1)
+                              ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+                              ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+                              ChevronFill: =RGBA(80, 80, 80, 1)
+                              ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+                              ChevronHoverFill: =RGBA(50, 49, 48, 1)
+                              Color: =RGBA(50, 49, 48, 1)
+                              Default: =locRegistroSeleccionado.Rol
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =RGBA(245, 245, 245, 1)
+                              FocusedBorderColor: =locTema_AccionPrimaria
+                              FocusedBorderThickness: =1
+                              Font: =Font.'Segoe UI'
+                              HoverBorderColor: =RGBA(16, 110, 190, 1)
+                              HoverColor: =RGBA(50, 49, 48, 1)
+                              HoverFill: =locColorGris300
+                              Items: =spRolesDefinicion.Title
+                              Items.Value: =Title
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =5
+                              PaddingLeft: =12
+                              PaddingRight: =5
+                              PaddingTop: =5
+                              PressedBorderColor: =RGBA(16, 110, 190, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =locTema_AccionPrimaria
+                              SelectionColor: =RGBA(50, 49, 48, 1)
+                              SelectionFill: =locTema_AccionPrimaria
+                  - conCuerpoFormulario_Roles:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =15
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =20
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        PaddingTop: =20
+                        Visible: =locVistaActual = "ROLES"
+                        X: =40
+                        Y: =40
+                      Children:
+                        - lblNombre_Roles:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Rol"
+                        - txtNombre_Roles:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Align: =Align.Center
+                              BorderRadius: =8
+                              Height: =40
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Placeholder: |-
+                                ="Ej: Juan Perez"
+                              Value: =locRegistroSeleccionado.Title
+                        - lbldescripcion_Roles:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Descripción del Perfil"
+                              Width: =170
+                        - txtDesc_Roles:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Align: =Align.Center
+                              BorderRadius: =8
+                              Height: =80
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Mode: ="MultiLine"
+                              Placeholder: ="Describa las responsabilidades de este rol..."
+                              Value: =locRegistroSeleccionado.Descripcion
+                        - lblPermisos_Roles:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              Color: =RGBA(50, 49, 48, 1)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              FocusedBorderThickness: =4
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              Size: =12
+                              Text: ="Permisos y Accesos"
+                              Width: =170
+                        - galEditorPermisos:
+                            Control: Gallery@2.15.0
+                            Variant: BrowseLayout_Flexible_SocialFeed_ver5.0
+                            Properties:
+                              BorderColor: =RGBA(245, 245, 245, 1)
+                              FillPortions: =0
+                              Height: =225
+                              Items: =colPermisosEditor
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              TemplatePadding: =0
+                              TemplateSize: =70
+                            Children:
+                              - rectSeparador:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    DisabledFill: =RGBA(161, 159, 157, 1)
+                                    Fill: =RGBA(230, 230, 230, 1)
+                                    FocusedBorderThickness: =4
+                                    Height: =1
+                                    HoverFill: =RGBA(0, 120, 212, 1)
+                                    OnSelect: =Select(Parent)
+                                    PressedFill: =RGBA(0, 120, 212, 1)
+                                    Width: =Parent.TemplateWidth
+                                    Y: =Parent.TemplateHeight - 1
+                              - tglPermiso_Valor:
+                                  Control: Toggle@1.1.5
+                                  Properties:
+                                    Checked: =ThisItem.Valor
+                                    Label: =""
+                                    LabelPosition: =
+                                    OnCheck: =
+                                    OnSelect: |-
+                                      =Patch(colPermisosEditor, ThisItem, {Valor: !ThisItem.Valor})
+                                    OnUncheck: =
+                                    X: =Parent.TemplateWidth - Self.Width + 45
+                                    Y: =15
+                              - lblPermiso_Desc:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =locColorGris400
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    Height: =35
+                                    OnSelect: =Select(Parent)
+                                    Size: =10
+                                    Text: =ThisItem.Desc
+                                    Width: =Parent.TemplateWidth - 80
+                                    X: =10
+                                    Y: =28
+                              - lblPermiso_Titulo:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Semibold
+                                    OnSelect: =Select(Parent)
+                                    Size: =11
+                                    Text: =ThisItem.Titulo
+                                    Width: =220
+                                    X: =10
+                                    Y: =5
+                  - conBotones_UsuariosRoles:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        BorderColor: =Color.Transparent
+                        BorderStyle: =BorderStyle.None
+                        DropShadow: =DropShadow.None
+                        Fill: =Color.Transparent
+                        FillPortions: =0
+                        Height: =50
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                        LayoutMaxHeight: =50
+                        LayoutMinHeight: =10
+                        LayoutMinWidth: =16
+                        PaddingBottom: =15
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        PaddingTop: =15
+                        Width: =Parent.Width
+                      Children:
+                        - btnGuardar_UsuariosRoles:
+                            Control: Button@0.0.45
+                            Properties:
+                              AcceptsFocus: =false
+                              DisplayMode: |-
+                                =If(
+                                    // Si es Usuario y falta Nombre o Email
+                                    locVistaActual = "USUARIOS" && (IsBlank(txtNombre_Usuarios.Value) || IsBlank(txtEmail_Usuarios.Value)),
+                                    DisplayMode.Disabled,
+                                    // Si es Rol y falta Descripción
+                                    locVistaActual = "ROLES" && IsBlank(txtDesc_Roles.Value),
+                                    DisplayMode.Disabled,
+                                    // Si todo ok
+                                    DisplayMode.Edit
+                                )
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =// --- PARTE 1: LOGICA USUARIOS ---
+                                If(locVistaActual = "USUARIOS",
+                                    Patch(spUsuarios, 
+                                        Coalesce(locRegistroSeleccionado, Defaults(spUsuarios)), 
+                                        {
+                                            Title: txtNombre_Usuarios.Value,    
+                                            Email: txtEmail_Usuarios.Value,       
+                                            Rol: ddRol_Usuarios.Selected.Title,
+                                            Activo: true
+                                        }
+                                    );
+                                    Notify("Usuario guardado exitosamente", NotificationType.Success),
+
+                                // --- PARTE 2: LOGICA ROLES ---
+                                    // A. Guardamos datos básicos (Descripción)
+                                    Patch(spRolesDefinicion, 
+                                        LookUp(spRolesDefinicion, ID = locRegistroSeleccionado.ID), 
+                                        {
+                                            Title: txtNombre_Roles.Value,
+                                            Descripcion: txtDesc_Roles.Value  
+                                        }
+                                    );
+
+                                    // B. Construimos el JSON compactando la colección de Toggles
+                                    With(
+                                        {
+                                            jsonBody: Concat(
+                                                colPermisosEditor, 
+                                                Char(34) & Key & Char(34) & ":" & If(Valor, "true", "false") & ","
+                                            )
+                                        },
+                                        // Guardamos quitando la última coma y agregando llaves {}
+                                        Patch(spRolesDefinicion, 
+                                            LookUp(spRolesDefinicion, ID = locRegistroSeleccionado.ID),
+                                            {
+                                                PermisosJSON: "{" & Left(jsonBody, Len(jsonBody)-1) & "}"
+                                            }
+                                        )
+                                    );
+                                    Notify("Permisos actualizados correctamente", NotificationType.Success)
+                                );
+
+                                // --- CIERRE Y LIMPIEZA ---
+                                UpdateContext({ locMostrarFormulario: false });
+                                Reset(txtNombre_Usuarios);
+                                Reset(txtEmail_Usuarios);
+                                Reset(txtDesc_Roles);
+                              Text: ="Guardar"
+                              Width: =100
+                              X: =40
+                              Y: =40
+                        - btnCancelar_UsuariosRoles:
+                            Control: Button@0.0.45
+                            Properties:
+                              Align: =Align.Justify
+                              BasePaletteColor: =Color.Transparent
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({ locMostrarFormulario: false });
+                                Reset(txtNombre_Usuarios);
+                                Reset(txtEmail_Usuarios);
+                                Reset(txtDesc_Roles);
+                              Text: ="Cancelar"
+                              Width: =100
+                              X: =40
+                              Y: =40
+            - conTarjetaConfirmacion_Usuarios:
+                Control: GroupContainer@1.4.0
+                Variant: AutoLayout
+                Properties:
+                  AlignInContainer: =AlignInContainer.Center
+                  BorderColor: =RGBA(200, 200, 200, 1)
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Bold
+                  Fill: =Color.White
+                  FillPortions: =0
+                  Height: =250
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =15
+                  LayoutJustifyContent: =LayoutJustifyContent.Center
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =20
+                  PaddingLeft: =20
+                  PaddingRight: =20
+                  PaddingTop: =20
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  Visible: =locMostrarConfirmacion
+                  Width: =450
+                Children:
+                  - lblTituloConfirmacion_1:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =RGBA(50, 49, 48, 1)
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        Fill: =RGBA(245, 245, 245, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Bold
+                        Height: =50
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        Size: =16
+                        Text: ="Confirmar Eliminación"
+                        Width: =Parent.Width
+                  - lblMensajeConfirmacion_1:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 0)
+                        BorderStyle: =BorderStyle.None
+                        BorderThickness: =2
+                        Color: =RGBA(50, 49, 48, 1)
+                        DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                        DisabledColor: =RGBA(161, 159, 157, 1)
+                        FocusedBorderThickness: =4
+                        Font: =Font.'Segoe UI'
+                        Height: =110
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        Text: ="¿Estás seguro de que deseas desactivar el acceso de " & locRegistroSeleccionado.Title & "? Esta acción no eliminará su historial pero le impedirá ingresar al sistema."
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =60
+                  - conBotonesConfirmacion_1:
+                      Control: GroupContainer@1.4.0
+                      Variant: AutoLayout
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        FillPortions: =0
+                        Height: =60
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =20
+                        LayoutJustifyContent: =LayoutJustifyContent.Center
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                        Width: =Parent.Width
+                      Children:
+                        - btnConfirmarBorrado_1:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =Color.White
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =RGBA(220, 53, 69, 1)
+                              Font: =Font.'Segoe UI'
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(Self.Fill, -20%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =// 1. Ejecutamos la baja lógica (Soft Delete)
+                                Patch(spUsuarios, 
+                                    LookUp(spUsuarios, ID = locRegistroSeleccionado.ID), 
+                                    {
+                                        Activo: false
+                                    }
+                                );
+
+                                // 2. Feedback al usuario
+                                Notify(
+                                    "El usuario " & locRegistroSeleccionado.Title & " ha sido desactivado.", 
+                                    NotificationType.Success
+                                );
+
+                                // 3. Cerramos el cuadro de confirmación
+                                UpdateContext({ locMostrarConfirmacion: false });
+
+                                // 4. Limpiamos la selección
+                                UpdateContext({ locRegistroSeleccionado: Blank() });
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Text: ="Eliminar"
+                              Width: =180
+                              X: =240
+                              Y: =190
+                        - btnCancelarBorrado_1:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              Color: =If(Self.Fill = RGBA(230, 230, 230, 1), Color.Black, Color.White)
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledColor: =RGBA(161, 159, 157, 1)
+                              DisabledFill: =RGBA(242, 242, 241, 0)
+                              Fill: =RGBA(169, 169, 169, 1)
+                              Font: =Font.'Segoe UI'
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverColor: =RGBA(255, 255, 255, 1)
+                              HoverFill: =ColorFade(Self.Fill, -20%)
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              OnSelect: |-
+                                =UpdateContext({
+                                    locRegistroSeleccionado: Blank(),
+                                    locMostrarConfirmacion: false
+                                });
+                              PressedBorderColor: =RGBA(0, 69, 120, 1)
+                              PressedColor: =RGBA(255, 255, 255, 1)
+                              PressedFill: =RGBA(16, 110, 190, 1)
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Text: ="Cancelar"
+                              Width: =180
+                              X: =30
+                              Y: =190
