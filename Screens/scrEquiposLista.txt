@@ -3,13 +3,7 @@ Screens:
     Properties:
       Fill: =locTema_FondoPagina
       LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
-      OnVisible: |-
-        =Set(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);
-        Refresh(spUbicaciones);
-
-        UpdateContext({ locCargando: true });
-        Refresh(spEquipos); 
-        UpdateContext({ locCargando: false });
+      OnVisible: "=// 1. Mostrar Spinner y Guardar Navegación\r\nSet(varEnProcesoDeCarga, true);\r\nSet(varActiveId, LookUp(colNav, Screen = App.ActiveScreen).Id);\r\n\r\n// 2. Cargar Maestros en Caché (Para evitar N+1 LookUps)\r\nConcurrent(\r\n    ClearCollect(colCacheUbicaciones, spUbicaciones),\r\n    ClearCollect(colCacheTipos, spCatalogosTiposEquipo)\r\n);\r\n\r\n// 3. Cargar Equipos \"Enriquecidos\"\r\n// APLICAMOS FILTRO 4 AQUI: No traemos borradores a la memoria\r\nClearCollect(colEquiposLista,\r\n    DropColumns(\r\n        AddColumns(\r\n            Filter(spEquipos, EsBorrador = false), \r\n            \r\n            // Agregamos columnas de texto plano para búsqueda rápida\r\n            NombreSector, LookUp(colCacheUbicaciones, ID = SectorID).Title,\r\n            NombreLinea,  LookUp(colCacheUbicaciones, ID = LineaID).Title,\r\n            NombreTipo,   LookUp(colCacheTipos, ID = TipoEquipoID).Title\r\n        ),\r\n        // Limpiamos basura de SP para ahorrar RAM\r\n        Author, Editor, ComplianceAssetId, OData__ColorTag\r\n    )\r\n);\r\n\r\nSet(varEnProcesoDeCarga, false);"
     Children:
       - cmpHeader_EquiposLista:
           Control: CanvasComponent
@@ -20,15 +14,6 @@ Screens:
             LongitudHorizontal: =700
             TriggerReset: =true
             Width: =Parent.Width
-      - cmpSidebar_EquiposLista:
-          Control: CanvasComponent
-          ComponentName: cmpSidebar
-          Properties:
-            Fill: =Color.Transparent
-            Height: =App.Height - cmpHeader_EquiposLista.Height
-            Navegacion: =
-            Width: =If(varMenuCompacto, 80, 265)
-            Y: =cmpHeader_EquiposLista.Height
       - cmpHeaderSeccion_EquiposLista:
           Control: CanvasComponent
           ComponentName: cmpHeaderSeccion
@@ -39,6 +24,15 @@ Screens:
             Title: =LookUp(colNav, Id = varActiveId).PageTitle
             Width: =App.Width - cmpSidebar_EquiposLista.Width
             X: =cmpSidebar_EquiposLista.Width
+            Y: =cmpHeader_EquiposLista.Height
+      - cmpSidebar_EquiposLista:
+          Control: CanvasComponent
+          ComponentName: cmpSidebar
+          Properties:
+            Fill: =Color.Transparent
+            Height: =App.Height - cmpHeader_EquiposLista.Height
+            Navegacion: =
+            Width: =If(varMenuCompacto, 85, 265)
             Y: =cmpHeader_EquiposLista.Height
       - conMain_EquiposLista:
           Control: GroupContainer@1.4.0
@@ -91,10 +85,10 @@ Screens:
                         PressedBorderColor: =RGBA(0, 69, 120, 1)
                         PressedColor: =RGBA(255, 255, 255, 1)
                         PressedFill: =RGBA(16, 110, 190, 1)
-                        RadiusBottomLeft: =0
-                        RadiusBottomRight: =0
-                        RadiusTopLeft: =0
-                        RadiusTopRight: =0
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
                         Text: ="+ Nuevo Equipo"
                         Width: =180
                         X: =Parent.Width - Self.Width - 20
@@ -125,6 +119,7 @@ Screens:
                         Fill: =Color.White
                         OnChange: =true
                         Placeholder: ="Buscar por código, nombre o marca..."
+                        TriggerOutput: ="Keypress"
                         Width: =200
                         X: =icnLupa_EquiposLista.X + icnLupa_EquiposLista.Width + 10
                         Y: =24
@@ -275,7 +270,7 @@ Screens:
                         Height: =Parent.Height
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
-                        Text: ="MARCA"
+                        Text: ="SUBSECTOR"
                         X: =lblEncabezado2_EquiposLista.X + lblEncabezado2_EquiposLista.Width
                   - lblEncabezado5_EquiposLista:
                       Control: Label@2.5.1
@@ -320,32 +315,7 @@ Screens:
                 Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
                 Properties:
                   BorderColor: =RGBA(245, 245, 245, 1)
-                  Items: |-
-                    =SortByColumns(
-                        Filter(spEquipos,
-                            // 1. Toggle de Inactivos
-                            (tglMostrarInactivos.Checked || Activo = true) &&
-
-                            // 2. Filtro por Sector (OPTIMIZADO Y DELEGABLE)
-                            (
-                                ddFiltro_Sector.Selected.ID = -1 || // Si es "Todos"
-                                SectorID = ddFiltro_Sector.Selected.ID // ¡Directo y sin delegación!
-                            ) &&
-
-                            // 3. Buscador (Multicriterio)
-                            (
-                                StartsWith(Title, txtBuscador_EquiposLista.Value) || 
-                                StartsWith(CodigoEquipo, txtBuscador_EquiposLista.Value) || 
-                                StartsWith(Marca, txtBuscador_EquiposLista.Value)
-                            ) &&
-                            // 4. Filtro de archivos borrador
-                            (
-                                EsBorrador = false
-                            )
-                        ),
-                        "Nombre",
-                        SortOrder.Ascending
-                    )
+                  Items: "=SortByColumns(\r\n    Search(\r\n        Filter(colEquiposLista,\r\n            // 1. Filtros (Inactivos y Sector) - Sin cambios\r\n            (tglMostrarInactivos.Checked || Activo = true) &&\r\n            (\r\n                ddFiltro_Sector.Selected.ID = -1 || \r\n                SectorID = ddFiltro_Sector.Selected.ID\r\n            )\r\n        ),\r\n        // 2. BUSCADOR\r\n        txtBuscador_EquiposLista.Value,\r\n        \r\n        // --- CAMBIO 1: PRIORIDAD DE BÚSQUEDA ---\r\n        // Ponemos primero el Código para que el buscador lo priorice\r\n        CodigoEquipo,   \r\n        Title,          // Luego el Nombre\r\n        Marca,          \r\n        NombreSector,   \r\n        NombreLinea     \r\n    ),\r\n    // --- CAMBIO 2: ORDENAMIENTO ---\r\n    // Ordenamos la lista por Código en lugar de por Nombre\r\n    \"Title\", \r\n    SortOrder.Ascending\r\n)"
                   LayoutMinHeight: =0
                   LayoutMinWidth: =0
                   TemplateFill: =If(ThisItem.IsSelected, locColorGris200, locTema_TablaFondoRow)
@@ -384,7 +354,7 @@ Screens:
                               LayoutMaxHeight: =
                               LayoutMaxWidth: =
                               LayoutMinWidth: =100
-                              Text: =ThisItem.Title
+                              Text: =ThisItem.CodigoEquipo
                               X: =20
                         - lblCampo2_EquiposLista:
                             Control: Label@2.5.1
@@ -404,7 +374,7 @@ Screens:
                               LayoutMaxHeight: =
                               LayoutMaxWidth: =
                               LayoutMinWidth: =100
-                              Text: =ThisItem.CodigoEquipo
+                              Text: =ThisItem.Title
                               X: =20
                         - lblCampo3_EquiposLista:
                             Control: Label@2.5.1
@@ -444,7 +414,7 @@ Screens:
                               LayoutMaxHeight: =
                               LayoutMaxWidth: =
                               LayoutMinWidth: =100
-                              Text: =ThisItem.Marca
+                              Text: =ThisItem.NombreLinea
                               X: =20
                         - conEstado_Galeria:
                             Control: GroupContainer@1.4.0
@@ -553,9 +523,7 @@ Screens:
                                     Icon: =Icon.View
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
-                                    OnSelect: |-
-                                      =// Navega a la pantalla 3.2 (Lectura)
-                                      Navigate(scrEquiposFichaIndividual, ScreenTransition.Cover, { locRegistroVisualizar: ThisItem })
+                                    OnSelect: "=// Navega a la pantalla 3.2 (Lectura)\r\nNavigate(\r\n    scrEquiposFichaIndividual, \r\n    ScreenTransition.Fade, \r\n    { \r\n        // 1. Pasamos el registro\r\n        locRegistroVisualizar: ThisItem,\r\n        \r\n        // 2. LA SOLUCIÓN: Forzamos la pestaña ANTES de entrar\r\n        locTabFicha: \"RESUMEN\" \r\n    }\r\n)"
                                     PressedBorderColor: =RGBA(0, 0, 0, 0)
                                     PressedColor: =RGBA(16, 110, 190, 1)
                                     PressedFill: =RGBA(0, 0, 0, 0)
