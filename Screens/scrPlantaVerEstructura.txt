@@ -31,7 +31,11 @@ Screens:
         // 6. Inicializar coleccion de equipos seleccionados
         Clear(colEquiposSeleccionados);
 
-        // 7. Finalizar carga
+        // 7. LIMPIEZA DE EDICIÓN EN MEMORIA
+        Clear(colSubsectoresEdicion);
+        Clear(colSubsectoresParaBorrar);
+
+        // 8. Finalizar carga
         UpdateContext({ locCargando: false });
     Children:
       - cmpHeader_Planta:
@@ -271,7 +275,14 @@ Screens:
                                           )
                                       );
 
-                                      // 4. Apagamos carga
+                                      // 4. Cargar subsectores en colección temporal para edición
+                                      ClearCollect(colSubsectoresEdicion, 
+                                          Filter(spUbicaciones, PadreID = ThisItem._registro.ID, Activo = true)
+                                      );
+                                      // Inicializar la papelera VACÍA pero con la estructura de la lista de SharePoint
+                                      ClearCollect(colSubsectoresParaBorrar, Filter(spUbicaciones, ID = 0));
+
+                                      // 5. Apagamos carga
                                       UpdateContext({ locCargandoTabla: false });
                                     Size: =If(ThisItem._esPadre, 14, 13)
                                     Text: =ThisItem._registro.Title
@@ -304,11 +315,6 @@ Screens:
                                     Width: =lblNombre_Arbol.Width
                                     X: =lblNombre_Arbol.X
                                     Y: =lblNombre_Arbol.Y
-                        - BarcodeReader2:
-                            Control: BarcodeReader@1.0.25
-                            Properties:
-                              LayoutMinHeight: =16
-                              LayoutMinWidth: =16
                   - conPaneDerecho_Detalle:
                       Control: GroupContainer@1.4.0
                       Variant: AutoLayout
@@ -367,14 +373,24 @@ Screens:
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
                                     OnSelect: |-
-                                      =// 1. Cambiar pestaña
-                                      UpdateContext({ locTabActiva: "PROPIEDADES" });
-
-                                      // 2. Refrescar el registro seleccionado
+                                      =// 1. Refrescar el registro seleccionado desde la BD (Trabajo pesado primero)
                                       Refresh(spUbicaciones);
                                       UpdateContext({ 
                                           locItemSeleccionado: LookUp(spUbicaciones, ID = locItemSeleccionado.ID) 
                                       });
+
+                                      // 2. Preparar datos de edición en memoria (Cargar lista y limpiar papelera)
+                                      ClearCollect(colSubsectoresEdicion, 
+                                          Filter(spUbicaciones, PadreID = locItemSeleccionado.ID, Activo = true)
+                                      );
+                                      Clear(colSubsectoresParaBorrar);
+
+                                      // 3. Resetear controles visuales (Inputs limpios)
+                                      Reset(txtNombre_Propiedades);
+                                      Reset(txtNuevoSubsector);
+
+                                      // 4. CAMBIO DE PESTAÑA (Paso Final)
+                                      UpdateContext({ locTabActiva: "PROPIEDADES" })
                                     PaddingBottom: =8
                                     PressedBorderColor: =RGBA(0, 69, 120, 1)
                                     PressedColor: =RGBA(255, 255, 255, 1)
@@ -398,7 +414,7 @@ Screens:
                                     DisabledBorderColor: =RGBA(0, 0, 0, 0)
                                     DisabledColor: =RGBA(161, 159, 157, 1)
                                     DisabledFill: =RGBA(242, 242, 241, 0)
-                                    DisplayMode: =If(locModoCreacion, DisplayMode.Disabled, DisplayMode.Edit)
+                                    DisplayMode: =If(locModoCreacion || IsBlank(locItemSeleccionado), DisplayMode.Disabled, DisplayMode.Edit)
                                     Fill: =If(locTabActiva = "EQUIPOS", locTema_AccionPrimaria, Color.Transparent)
                                     FillPortions: =1
                                     Font: =Font.'Segoe UI'
@@ -507,12 +523,156 @@ Screens:
                                     Appearance: ='TextInputCanvas.Appearance'.Outline
                                     BorderColor: =locTema_BordeInput
                                     DisplayMode: =If(!IsBlank(locItemSeleccionado) || locModoCreacion, DisplayMode.Edit, DisplayMode.Disabled)
+                                    FontSize: =15
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
                                     Placeholder: ="Ingrese el nombre..."
+                                    TriggerOutput: ="Keypress"
                                     Value: =If(locModoCreacion, "", locItemSeleccionado.Title)
                                     Width: =Parent.Width - 40
-                              - conBotones_Propiedades:
+                              - lblTitulo_Subsectores:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    BorderColor: =RGBA(0, 0, 0, 0)
+                                    BorderStyle: =BorderStyle.None
+                                    BorderThickness: =2
+                                    Color: =RGBA(50, 49, 48, 1)
+                                    DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                    DisabledColor: =RGBA(161, 159, 157, 1)
+                                    FocusedBorderThickness: =4
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Semibold
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    Text: ="Subsectores Asignados"
+                                    Visible: =!locEsHijo && !locModoCreacion && !IsBlank(locItemSeleccionado)
+                                    Width: =Parent.Width - 40
+                              - galSubsectores_Lista:
+                                  Control: Gallery@2.15.0
+                                  Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+                                  Properties:
+                                    BorderColor: =RGBA(245, 245, 245, 1)
+                                    FillPortions: =0
+                                    Height: =CountRows(Self.AllItems) * Self.TemplateHeight
+                                    Items: =Sort(colSubsectoresEdicion, Title, SortOrder.Ascending)
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
+                                    TemplateSize: =45
+                                    Visible: =lblTitulo_Subsectores.Visible
+                                  Children:
+                                    - icnBorrar_SubsectorItem:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          Color: =locTema_IconoBorrar
+                                          DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                                          DisabledColor: =RGBA(225, 223, 221, 1)
+                                          DisabledFill: =RGBA(0, 0, 0, 0)
+                                          FocusedBorderThickness: =4
+                                          Height: =Parent.TemplateHeight
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =locTema_IconoBorrar
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          Icon: =Icon.Trash
+                                          OnSelect: "=If(\r\n    // CASO A: El subsector YA EXISTE en SharePoint (tiene ID real)\r\n    ThisItem.ID > 0,\r\n    \r\n    // 1. Validamos seguridad contra la Base de Datos REAL\r\n    If(\r\n        !IsEmpty(Filter(spEquipos, LineaID = ThisItem.ID, Activo = true)),\r\n        \r\n        // Error: Tiene equipos, no se puede tocar\r\n        Notify(\"⛔ No puedes eliminar este subsector: Tiene equipos asignados.\", NotificationType.Error),\r\n\r\n        // Éxito: No tiene equipos -> Lo movemos a la Papelera Temporal\r\n        Collect(colSubsectoresParaBorrar, ThisItem);\r\n        Remove(colSubsectoresEdicion, ThisItem)\r\n    ),\r\n\r\n    // CASO B: Es un subsector NUEVO (recién creado en esta sesión, ID=0)\r\n    // Simplemente lo borramos de la lista visual. No va a la papelera porque nunca se guardó.\r\n    Remove(colSubsectoresEdicion, ThisItem)\r\n)"
+                                          PaddingLeft: =20
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedColor: =ColorFade(Self.Color, -40%)
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          Width: =Parent.TemplateWidth - Self.X
+                                          X: =lblNombre_SubsectorItem.Width
+                                    - lblNombre_SubsectorItem:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          BorderThickness: =2
+                                          Color: =RGBA(50, 49, 48, 1)
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          FocusedBorderThickness: =4
+                                          Font: =Font.'Segoe UI'
+                                          Height: =Parent.TemplateHeight
+                                          OnSelect: =Select(Parent)
+                                          PaddingLeft: =25
+                                          Text: =ThisItem.Title
+                                          Width: =Parent.TemplateWidth - 80
+                              - conCrear_Subsector:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =40
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =20
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Visible: =lblTitulo_Subsectores.Visible
+                                  Children:
+                                    - txtNuevoSubsector:
+                                        Control: TextInput@0.0.54
+                                        Properties:
+                                          Appearance: ='TextInputCanvas.Appearance'.Outline
+                                          BorderColor: =locTema_BordeInput
+                                          BorderThickness: =1
+                                          FillPortions: =1
+                                          FontSize: =15
+                                          Height: =Parent.Height
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          Placeholder: ="Nuevo subsector..."
+                                    - btnAgregarSubsector:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          Fill: =Color.Green
+                                          Font: =Font.'Segoe UI'
+                                          Height: =Parent.Height
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =ColorFade(Self.Fill, -40%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =If(
+                                                // 1. Validar vacío
+                                                IsBlank(txtNuevoSubsector.Value),
+                                                Notify("⚠️ Escribe un nombre.", NotificationType.Warning),
+
+                                                // 2. Validar duplicados (EN LOCAL)
+                                                !IsBlank(LookUp(colSubsectoresEdicion, Title = txtNuevoSubsector.Value)),
+                                                Notify("⛔ Ya existe un subsector con ese nombre en la lista.", NotificationType.Error),
+
+                                                // 3. AGREGAR A COLECCIÓN TEMPORAL (ID = 0 indica que es nuevo)
+                                                Collect(colSubsectoresEdicion, {
+                                                    Title: txtNuevoSubsector.Value,
+                                                    PadreID: locItemSeleccionado.ID,
+                                                    Activo: true,
+                                                    ID: 0  // Marca de "Nuevo"
+                                                });
+                                                Reset(txtNuevoSubsector);
+                                            )
+                                          PaddingBottom: =8
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =ColorFade(Self.Fill, -40%)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Text: ="+ Agregar"
+                              - conBotones_PropiedadesPadre:
                                   Control: GroupContainer@1.4.0
                                   Variant: AutoLayout
                                   Properties:
@@ -522,14 +682,16 @@ Screens:
                                     LayoutAlignItems: =LayoutAlignItems.Center
                                     LayoutDirection: =LayoutDirection.Horizontal
                                     LayoutGap: =15
+                                    LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
                                     PaddingBottom: =8
                                     PaddingLeft: =8
                                     PaddingRight: =8
                                     PaddingTop: =8
+                                    Visible: =!locEsHijo
                                   Children:
-                                    - btnGuardar_Propiedades:
+                                    - btnGuardar_Sector:
                                         Control: Classic/Button@2.2.0
                                         Properties:
                                           BorderColor: =RGBA(0, 0, 0, 0)
@@ -538,7 +700,7 @@ Screens:
                                           DisabledBorderColor: =RGBA(0, 0, 0, 0)
                                           DisabledColor: =RGBA(161, 159, 157, 1)
                                           DisabledFill: =RGBA(242, 242, 241, 0)
-                                          DisplayMode: =If(!IsBlank(locItemSeleccionado) || locModoCreacion, DisplayMode.Edit, DisplayMode.Disabled)
+                                          DisplayMode: "=If(\r\n    // 1. ¿Cambió el nombre del Padre? (Valor Input vs Valor Guardado)\r\n    txtNombre_Propiedades.Value <> locItemSeleccionado.Title ||\r\n    \r\n    // 2. ¿Hay subsectores NUEVOS en la lista temporal? (Tienen ID=0)\r\n    !IsEmpty(Filter(colSubsectoresEdicion, ID = 0)) ||\r\n    \r\n    // 3. ¿Hay subsectores en la PAPELERA temporal?\r\n    !IsEmpty(colSubsectoresParaBorrar),\r\n\r\n    // RESULTADO:\r\n    DisplayMode.Edit,     // Si algo cambió -> Habilitados\r\n    DisplayMode.Disabled  // Si todo está igual -> Deshabilitados\r\n)"
                                           Fill: =locTema_AccionPrimaria
                                           Font: =Font.'Segoe UI'
                                           HoverBorderColor: =RGBA(0, 0, 0, 0)
@@ -546,26 +708,7 @@ Screens:
                                           HoverFill: =ColorFade(Self.Fill, -40%)
                                           LayoutMinHeight: =16
                                           LayoutMinWidth: =16
-                                          OnSelect: |-
-                                            =If(IsBlank(txtNombre_Propiedades.Value),
-                                                Notify("El nombre es obligatorio.", NotificationType.Error),
-
-                                                Patch(spUbicaciones,
-                                                If(locModoCreacion,
-                                                    Defaults(spUbicaciones),
-                                                    LookUp(spUbicaciones, ID = locItemSeleccionado.ID) // <--- CAMBIO CLAVE: Búsqueda explícita
-                                                ),
-                                                {
-                                                    Title: txtNombre_Propiedades.Value,
-                                                    PadreID: If(locModoCreacion, 0, locItemSeleccionado.PadreID),
-                                                    Activo: true
-                                                }
-                                                );
-                                                Notify("Guardado correctamente.", NotificationType.Success);
-                                                Refresh(spUbicaciones);
-                                                ClearCollect(colUbicacionesRaw, spUbicaciones);
-                                                UpdateContext({ locModoCreacion: false, locItemSeleccionado: Blank() })
-                                            )
+                                          OnSelect: "=If(IsBlank(txtNombre_Propiedades.Value),\r\n    Notify(\"⚠️ El nombre es obligatorio.\", NotificationType.Error),\r\n\r\n    // 1. GUARDAR EL PADRE (Sector)\r\n    Patch(spUbicaciones,\r\n        If(locModoCreacion,\r\n            Defaults(spUbicaciones),\r\n            LookUp(spUbicaciones, ID = locItemSeleccionado.ID)\r\n        ),\r\n        {\r\n            Title: txtNombre_Propiedades.Value,\r\n            PadreID: If(locModoCreacion, 0, locItemSeleccionado.PadreID),\r\n            Activo: true\r\n        }\r\n    );\r\n\r\n    // 2. PROCESAR ELIMINACIONES (Papelera Temporal)\r\n    // Usamos el alias '_borrar' para referirnos al item de la colección\r\n    ForAll(colSubsectoresParaBorrar As _borrar,\r\n        Remove(spUbicaciones, LookUp(spUbicaciones, ID = _borrar.ID))\r\n    );\r\n\r\n    // 3. PROCESAR CREACIONES (Nuevos en Memoria)\r\n    // Usamos el alias '_nuevo' para tomar el Título correcto\r\n    ForAll(Filter(colSubsectoresEdicion, ID = 0) As _nuevo,\r\n        Patch(spUbicaciones, Defaults(spUbicaciones), {\r\n            Title: _nuevo.Title,\r\n            PadreID: locItemSeleccionado.ID, \r\n            Activo: true\r\n        })\r\n    );\r\n\r\n    // 4. LIMPIEZA Y FINALIZACIÓN\r\n    Notify(\"Guardado correctamente.\", NotificationType.Success);\r\n    \r\n    // Refrescar Datos Reales\r\n    Refresh(spUbicaciones);\r\n    ClearCollect(colUbicacionesRaw, spUbicaciones);\r\n    \r\n    // Limpiar colecciones temporales\r\n    Clear(colSubsectoresParaBorrar);\r\n    Clear(colSubsectoresEdicion);\r\n\r\n    // Salir del modo edición\r\n    UpdateContext({ locModoCreacion: false, locItemSeleccionado: Blank() });\r\n    Reset(txtNombre_Propiedades)\r\n)"
                                           PaddingBottom: =3
                                           PaddingLeft: =0
                                           PaddingRight: =0
@@ -579,7 +722,7 @@ Screens:
                                           RadiusTopRight: =8
                                           Size: =13
                                           Text: =If(locModoCreacion, "Crear", "Guardar Cambios")
-                                    - btnEliminar_Propiedades:
+                                    - btnEliminar_Sector:
                                         Control: Classic/Button@2.2.0
                                         Properties:
                                           BorderColor: =locColorPeligro
@@ -601,7 +744,18 @@ Screens:
                                           LayoutMinHeight: =16
                                           LayoutMinWidth: =16
                                           OnSelect: |-
-                                            =UpdateContext({ locMostrarConfirmacion: true })
+                                            =If(
+                                                // 1. Validar Hijos ACTIVOS en la lista de arriba
+                                                CountRows(Filter(colUbicacionesRaw, PadreID = locItemSeleccionado.ID, Activo = true)) > 0,
+                                                Notify("⛔ No puedes eliminar: Tiene subsectores activos.", NotificationType.Error),
+
+                                                // 2. Validar Equipos
+                                                !IsEmpty(colEquiposInstalados),
+                                                Notify("⛔ No puedes eliminar: Tiene equipos asignados.", NotificationType.Error),
+
+                                                // 3. Confirmar
+                                                UpdateContext({ locMostrarConfirmacion: true })
+                                            )
                                           PaddingBottom: =3
                                           PaddingLeft: =0
                                           PaddingRight: =0
@@ -614,7 +768,131 @@ Screens:
                                           RadiusTopLeft: =8
                                           RadiusTopRight: =8
                                           Size: =13
-                                          Text: ="Eliminar"
+                                          Text: ="Eliminar Sector"
+                                    - btnDescartar_Sector:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =RGBA(255, 255, 255, 1)
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          DisplayMode: "=If(\r\n    // 1. ¿Cambió el nombre del Padre? (Valor Input vs Valor Guardado)\r\n    txtNombre_Propiedades.Value <> locItemSeleccionado.Title ||\r\n    \r\n    // 2. ¿Hay subsectores NUEVOS en la lista temporal? (Tienen ID=0)\r\n    !IsEmpty(Filter(colSubsectoresEdicion, ID = 0)) ||\r\n    \r\n    // 3. ¿Hay subsectores en la PAPELERA temporal?\r\n    !IsEmpty(colSubsectoresParaBorrar),\r\n\r\n    // RESULTADO:\r\n    DisplayMode.Edit,     // Si algo cambió -> Habilitados\r\n    DisplayMode.Disabled  // Si todo está igual -> Deshabilitados\r\n)"
+                                          Fill: =locColorGris400
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =ColorFade(Self.Fill, -40%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =// 1. Revertir cambios de nombre visualmente
+                                            Reset(txtNombre_Propiedades);
+
+                                            // 2. Recargar la colección original desde SharePoint (borrando los agregados en memoria)
+                                            ClearCollect(colSubsectoresEdicion, 
+                                                Filter(spUbicaciones, PadreID = locItemSeleccionado.ID, Activo = true)
+                                            );
+                                            Notify("Cambios descartados.", NotificationType.Information);
+                                          PaddingBottom: =8
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =ColorFade(Self.Fill, -40%)
+                                          RadiusBottomLeft: =6
+                                          RadiusBottomRight: =6
+                                          RadiusTopLeft: =6
+                                          RadiusTopRight: =6
+                                          Size: =13
+                                          Text: ="Descartar Cambios"
+                              - conBotones_PropiedadesHijo:
+                                  Control: GroupContainer@1.4.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =50
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =8
+                                    PaddingLeft: =8
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    Visible: =locEsHijo
+                                  Children:
+                                    - btnGuardar_Subsector:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =RGBA(242, 242, 241, 0)
+                                          DisplayMode: "=If(\r\n    // 1. ¿Cambió el nombre del Padre? (Valor Input vs Valor Guardado)\r\n    txtNombre_Propiedades.Value <> locItemSeleccionado.Title ||\r\n    \r\n    // 2. ¿Hay subsectores NUEVOS en la lista temporal? (Tienen ID=0)\r\n    !IsEmpty(Filter(colSubsectoresEdicion, ID = 0)) ||\r\n    \r\n    // 3. ¿Hay subsectores en la PAPELERA temporal?\r\n    !IsEmpty(colSubsectoresParaBorrar),\r\n\r\n    // RESULTADO:\r\n    DisplayMode.Edit,     // Si algo cambió -> Habilitados\r\n    DisplayMode.Disabled  // Si todo está igual -> Deshabilitados\r\n)"
+                                          Fill: =locTema_AccionPrimaria
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =ColorFade(Self.Fill, -40%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: "=If(IsBlank(txtNombre_Propiedades.Value),\r\n    Notify(\"⚠️ El nombre no puede estar vacío.\", NotificationType.Error),\r\n\r\n    // 1. VALIDACIÓN SIN DELEGACIÓN (Usamos 'With' para consultar primero y comparar ID después)\r\n    With(\r\n        {\r\n            _posibleGemelo: LookUp(spUbicaciones, \r\n                PadreID = locItemSeleccionado.PadreID && \r\n                Title = txtNombre_Propiedades.Value && \r\n                Activo = true\r\n            )\r\n        },\r\n        // Si encontramos a alguien con el mismo nombre... Y su ID es diferente al mío -> ¡Es un duplicado!\r\n        !IsBlank(_posibleGemelo) && _posibleGemelo.ID <> locItemSeleccionado.ID\r\n    ),\r\n    Notify(\"⛔ Ya existe otro subsector con ese nombre en este sector.\", NotificationType.Error),\r\n\r\n    // 2. GUARDADO SIMPLE\r\n    Patch(spUbicaciones, LookUp(spUbicaciones, ID = locItemSeleccionado.ID), {\r\n        Title: txtNombre_Propiedades.Value\r\n    });\r\n    Notify(\"Subsector actualizado.\", NotificationType.Success);\r\n    \r\n    // 3. REFRESCO\r\n    Refresh(spUbicaciones);\r\n    ClearCollect(colUbicacionesRaw, spUbicaciones);\r\n    UpdateContext({ locItemSeleccionado: LookUp(spUbicaciones, ID = locItemSeleccionado.ID) });\r\n    Reset(txtNombre_Propiedades)\r\n)"
+                                          PaddingBottom: =3
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =ColorFade(Self.Fill, -40%)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =13
+                                          Text: =If(locModoCreacion, "Crear", "Guardar Cambios")
+                                    - btnEliminar_Subsector:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =locColorPeligro
+                                          BorderThickness: =1
+                                          Color: =locTema_TextoInvertido
+                                          DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                                          DisabledColor: =RGBA(161, 159, 157, 1)
+                                          DisabledFill: =locColorGris300
+                                          DisplayMode: |-
+                                            =If(!locModoCreacion && !IsBlank(locItemSeleccionado), 
+                                                DisplayMode.Edit, 
+                                                DisplayMode.Disabled
+                                            )
+                                          Fill: =locColorPeligro
+                                          Font: =Font.'Segoe UI'
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          HoverColor: =RGBA(255, 255, 255, 1)
+                                          HoverFill: =ColorFade(Self.Fill, -40%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =16
+                                          OnSelect: |-
+                                            =If(
+                                                !IsEmpty(colEquiposInstalados),
+                                                Notify("⛔ No puedes eliminar: Tiene equipos asignados.", NotificationType.Error),
+                                                UpdateContext({ locMostrarConfirmacion: true })
+                                            )
+                                          PaddingBottom: =3
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          PressedBorderColor: =RGBA(0, 69, 120, 1)
+                                          PressedColor: =RGBA(255, 255, 255, 1)
+                                          PressedFill: =ColorFade(Self.Fill, -40%)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =13
+                                          Text: ="Eliminar Subsector"
                         - conVista_Equipos:
                             Control: GroupContainer@1.4.0
                             Variant: AutoLayout
@@ -1015,7 +1293,7 @@ Screens:
 
                                                                 // CASO 2: No tiene línea (o es 0) -> Valor por defecto
                                                                 { 
-                                                                    Title: "- Sin Línea -", 
+                                                                    Title: "- Sin Asignar -", 
                                                                     ID: 0 
                                                                 }
                                                             )
@@ -1030,7 +1308,7 @@ Screens:
                                                       Items: |-
                                                         =Ungroup(
                                                             Table(
-                                                                { _ops: Table({ Title: "- Sin Línea -", ID: 0 }) },
+                                                                { _ops: Table({ Title: "- Sin Asignar -", ID: 0 }) },
                                                                 { _ops: ShowColumns(
                                                                     Filter(colUbicacionesRaw, 
                                                                         PadreID = locItemSeleccionado.ID, 
